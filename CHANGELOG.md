@@ -9,4 +9,6 @@ semantic versioning after the first tagged release.
 
 ### Added
 
+- Initial Go CLI scaffold.
+- Cross-platform Go CI workflow.
 - Open-source project metadata.

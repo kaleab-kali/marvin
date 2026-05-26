@@ -65,7 +65,7 @@ Marvin is not ready for broad contribution yet, but the project is being
 structured as an open-source Go CLI from the start. Contributions should stay
 focused on the CSV MVP until the first release is complete.
 
-See `CONTRIBUTING.md` once the development scaffold lands.
+See `CONTRIBUTING.md` for local setup and pull request expectations.
 
 ## License
 

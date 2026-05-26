@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bytes"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -121,6 +122,78 @@ func TestAnalyzeRejectsInvalidBudgetFlag(t *testing.T) {
 	}
 	if !strings.Contains(stderr.String(), `invalid --total-budget value "free"`) {
 		t.Fatalf("expected invalid budget error, got %q", stderr.String())
+	}
+}
+
+func TestAnalyzeWritesMarkdownReport(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"analyze", "--format=markdown", csvPath}, &stdout, &stderr)
+
+	if code != 0 {
+		t.Fatalf("expected exit code 0, got %d with stderr %q", code, stderr.String())
+	}
+	output := stdout.String()
+	for _, want := range []string{
+		"# Marvin Cost Report",
+		"Total spend: **$100.00**",
+		"| Amazon EC2 | $100.00 |",
+	} {
+		if !strings.Contains(output, want) {
+			t.Fatalf("expected output to contain %q, got:\n%s", want, output)
+		}
+	}
+}
+
+func TestAnalyzeWritesJSONReport(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"analyze", "--format", "json", csvPath}, &stdout, &stderr)
+
+	if code != 0 {
+		t.Fatalf("expected exit code 0, got %d with stderr %q", code, stderr.String())
+	}
+
+	var payload struct {
+		TotalSpend   float64 `json:"total_spend"`
+		ServiceSpend []struct {
+			Service string  `json:"service"`
+			Cost    float64 `json:"cost"`
+		} `json:"service_spend"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &payload); err != nil {
+		t.Fatalf("expected valid JSON, got %v with output %q", err, stdout.String())
+	}
+	if payload.TotalSpend != 100 {
+		t.Fatalf("expected total spend 100, got %f", payload.TotalSpend)
+	}
+	if len(payload.ServiceSpend) != 1 || payload.ServiceSpend[0].Service != "Amazon EC2" {
+		t.Fatalf("expected Amazon EC2 service spend, got %+v", payload.ServiceSpend)
+	}
+}
+
+func TestAnalyzeRejectsUnsupportedFormat(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"analyze", "--format=xml", "cost.csv"}, &stdout, &stderr)
+
+	if code != 2 {
+		t.Fatalf("expected exit code 2, got %d", code)
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("expected empty stdout, got %q", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), `unsupported --format "xml"`) {
+		t.Fatalf("expected unsupported format error, got %q", stderr.String())
 	}
 }
 

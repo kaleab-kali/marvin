@@ -1,0 +1,31 @@
+package report
+
+import (
+	"bytes"
+	"encoding/json"
+	"testing"
+
+	"github.com/kaleab-kali/marvin/internal/cost"
+)
+
+func TestWriteJSON(t *testing.T) {
+	records := []cost.Record{
+		{Service: "Amazon EC2", StartDate: mustDate(t, "2026-01-01"), Cost: 100},
+	}
+
+	var output bytes.Buffer
+	if err := WriteJSON(&output, records, cost.WarningRules{}); err != nil {
+		t.Fatalf("expected JSON report to write, got %v", err)
+	}
+
+	var summary Summary
+	if err := json.Unmarshal(output.Bytes(), &summary); err != nil {
+		t.Fatalf("expected valid JSON, got %v with output %q", err, output.String())
+	}
+	if summary.TotalSpend != 100 {
+		t.Fatalf("expected total spend 100, got %f", summary.TotalSpend)
+	}
+	if len(summary.ServiceSpend) != 1 || summary.ServiceSpend[0].Service != "Amazon EC2" {
+		t.Fatalf("expected Amazon EC2 service spend, got %+v", summary.ServiceSpend)
+	}
+}

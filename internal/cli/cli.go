@@ -17,8 +17,9 @@ const Version = "0.1.0-dev"
 var errAnalyzeHelp = errors.New("analyze help requested")
 
 type analyzeOptions struct {
-	path  string
-	rules cost.WarningRules
+	path   string
+	format string
+	rules  cost.WarningRules
 }
 
 func Run(args []string, stdout, stderr io.Writer) int {
@@ -67,7 +68,7 @@ func runAnalyze(args []string, stdout, stderr io.Writer) int {
 		return 1
 	}
 
-	if err := report.WriteTerminal(stdout, records, options.rules); err != nil {
+	if err := writeReport(stdout, records, options); err != nil {
 		fmt.Fprintf(stderr, "write report: %v\n", err)
 		return 1
 	}
@@ -77,7 +78,8 @@ func runAnalyze(args []string, stdout, stderr io.Writer) int {
 
 func parseAnalyzeArgs(args []string) (analyzeOptions, error) {
 	options := analyzeOptions{
-		rules: cost.WarningRules{ServiceLimits: make(map[string]float64)},
+		format: "terminal",
+		rules:  cost.WarningRules{ServiceLimits: make(map[string]float64)},
 	}
 
 	for i := 0; i < len(args); i++ {
@@ -117,6 +119,18 @@ func parseAnalyzeArgs(args []string) (analyzeOptions, error) {
 				return analyzeOptions{}, err
 			}
 			options.rules.GrowthLimitPercent = amount
+		case arg == "--format":
+			value, ok := nextArg(args, &i)
+			if !ok {
+				return analyzeOptions{}, errors.New("--format requires terminal, markdown, or json")
+			}
+			if err := setReportFormat(&options, value); err != nil {
+				return analyzeOptions{}, err
+			}
+		case strings.HasPrefix(arg, "--format="):
+			if err := setReportFormat(&options, strings.TrimPrefix(arg, "--format=")); err != nil {
+				return analyzeOptions{}, err
+			}
 		case arg == "--service-budget":
 			value, ok := nextArg(args, &i)
 			if !ok {
@@ -144,6 +158,30 @@ func parseAnalyzeArgs(args []string) (analyzeOptions, error) {
 	}
 
 	return options, nil
+}
+
+func writeReport(stdout io.Writer, records []cost.Record, options analyzeOptions) error {
+	switch options.format {
+	case "terminal":
+		return report.WriteTerminal(stdout, records, options.rules)
+	case "markdown":
+		return report.WriteMarkdown(stdout, records, options.rules)
+	case "json":
+		return report.WriteJSON(stdout, records, options.rules)
+	default:
+		return fmt.Errorf("unsupported report format %q", options.format)
+	}
+}
+
+func setReportFormat(options *analyzeOptions, value string) error {
+	value = strings.ToLower(strings.TrimSpace(value))
+	switch value {
+	case "terminal", "markdown", "json":
+		options.format = value
+		return nil
+	default:
+		return fmt.Errorf("unsupported --format %q, expected terminal, markdown, or json", value)
+	}
 }
 
 func nextArg(args []string, index *int) (string, bool) {
@@ -197,6 +235,7 @@ func printAnalyzeUsage(w io.Writer) {
   marvin analyze [flags] <cost-explorer.csv>
 
 Flags:
+  --format <terminal|markdown|json>    Output format. Defaults to terminal.
   --total-budget <amount>             Warn when total spend exceeds amount.
   --service-budget <service=amount>   Warn when service spend exceeds amount. Repeatable.
   --growth-limit-percent <percent>    Warn when month-over-month growth exceeds percent.

@@ -10,15 +10,15 @@ cloud access, and no hidden state required for the first release.
 
 ## Status
 
-Marvin is in early development. The first milestone is a CSV-based MVP that can
-analyze sample Cost Explorer exports locally.
+Marvin is in CSV MVP development. It can analyze exported AWS Cost Explorer CSV
+files locally and produce terminal, Markdown, or JSON reports.
 
-The initial release will focus on:
+The current CLI supports:
 
 - Importing AWS Cost Explorer CSV files.
 - Grouping spend by service and month.
 - Showing month-over-month changes.
-- Emitting budget and growth warnings.
+- Emitting budget, service, and growth warnings from command-line thresholds.
 - Producing terminal, Markdown, and JSON reports.
 
 Live AWS API access, scheduled reports, Slack/email notifications, and anomaly
@@ -40,16 +40,68 @@ Marvin is not intended to replace AWS Cost Explorer. It is a small local tool fo
 turning exported data into repeatable reports that are easy to review in a
 terminal, pull request, or incident notes.
 
-## Planned Workflow
+## Quickstart
 
-The target v0.1 workflow is:
+Run the sample report:
 
 ```sh
 marvin analyze fixtures/sample-cost-explorer.csv
 ```
 
-The command will read a Cost Explorer CSV export and print a report with totals,
-service-level spend, month-over-month movement, and budget warnings.
+Run with warning thresholds:
+
+```sh
+marvin analyze --total-budget=300 --growth-limit-percent=10 --service-budget "Amazon Elastic Compute Cloud - Compute=200" fixtures/sample-cost-explorer.csv
+```
+
+Choose an output format:
+
+```sh
+marvin analyze --format terminal fixtures/sample-cost-explorer.csv
+marvin analyze --format markdown fixtures/sample-cost-explorer.csv
+marvin analyze --format json fixtures/sample-cost-explorer.csv
+```
+
+`terminal` is the default format.
+
+## CLI Usage
+
+```text
+marvin analyze [flags] <cost-explorer.csv>
+marvin version
+marvin help
+```
+
+Analyze flags:
+
+```text
+--format <terminal|markdown|json>    Output format. Defaults to terminal.
+--total-budget <amount>              Warn when total spend exceeds amount.
+--service-budget <service=amount>    Warn when service spend exceeds amount. Repeatable.
+--growth-limit-percent <percent>     Warn when month-over-month growth exceeds percent.
+```
+
+## Example Output
+
+```text
+Marvin Cost Report
+Total spend: $311.59
+
+Monthly spend
+Month    Cost
+2026-01  $143.22
+2026-02  $168.37
+
+Month-over-month
+Month    Previous  Current  Change   Change %
+2026-02  $143.22   $168.37  +$25.15  +17.56%
+
+Service spend
+Service                                 Cost
+Amazon Elastic Compute Cloud - Compute  $268.13
+Amazon Simple Storage Service           $40.34
+AWS Key Management Service              $3.12
+```
 
 ## Project Principles
 
@@ -61,12 +113,12 @@ service-level spend, month-over-month movement, and budget warnings.
 
 ## Contributing
 
-Marvin is not ready for broad contribution yet, but the project is being
-structured as an open-source Go CLI from the start. Contributions should stay
-focused on the CSV MVP until the first release is complete.
+Marvin is still early, but the project is structured as an open-source Go CLI
+from the start. Contributions should stay focused on the local CSV workflow
+until the first release is complete.
 
 See `CONTRIBUTING.md` for local setup and pull request expectations.
 
 ## License
 
-Marvin is planned to be released under the MIT License.
+Marvin is released under the MIT License.

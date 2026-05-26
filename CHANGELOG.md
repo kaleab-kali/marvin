@@ -11,6 +11,7 @@ semantic versioning after the first tagged release.
 
 - Cost aggregation helpers for total, service, and month spend.
 - Cost Explorer CSV parser and sample fixture.
+- Repository line-ending normalization for cross-platform CI.
 - Initial Go CLI scaffold.
 - Cross-platform Go CI workflow.
 - Open-source project metadata.

@@ -1,6 +1,10 @@
 package report
 
-import "github.com/kaleab-kali/marvin/internal/cost"
+import (
+	"math"
+
+	"github.com/kaleab-kali/marvin/internal/cost"
+)
 
 type Summary struct {
 	TotalSpend     float64           `json:"total_spend"`
@@ -48,7 +52,7 @@ func BuildSummary(records []cost.Record, rules cost.WarningRules) Summary {
 	warnings := cost.EvaluateWarnings(total, services, comparisons, rules)
 
 	return Summary{
-		TotalSpend:     total,
+		TotalSpend:     round(total, 2),
 		MonthlySpend:   summarizeMonths(months),
 		MonthOverMonth: summarizeComparisons(comparisons),
 		ServiceSpend:   summarizeServices(services),
@@ -61,7 +65,7 @@ func summarizeMonths(months []cost.MonthTotal) []MonthSpend {
 	for _, month := range months {
 		summary = append(summary, MonthSpend{
 			Month: month.Month.Format("2006-01"),
-			Cost:  month.Cost,
+			Cost:  round(month.Cost, 2),
 		})
 	}
 	return summary
@@ -73,10 +77,10 @@ func summarizeComparisons(comparisons []cost.MonthComparison) []MonthComparison 
 		summary = append(summary, MonthComparison{
 			Month:         comparison.Month.Format("2006-01"),
 			PreviousMonth: comparison.PreviousMonth.Format("2006-01"),
-			Cost:          comparison.Cost,
-			PreviousCost:  comparison.PreviousCost,
-			Change:        comparison.Change,
-			ChangePercent: comparison.ChangePercent,
+			Cost:          round(comparison.Cost, 2),
+			PreviousCost:  round(comparison.PreviousCost, 2),
+			Change:        round(comparison.Change, 2),
+			ChangePercent: round(comparison.ChangePercent, 2),
 		})
 	}
 	return summary
@@ -87,7 +91,7 @@ func summarizeServices(services []cost.ServiceTotal) []ServiceSpend {
 	for _, service := range services {
 		summary = append(summary, ServiceSpend{
 			Service: service.Service,
-			Cost:    service.Cost,
+			Cost:    round(service.Cost, 2),
 		})
 	}
 	return summary
@@ -99,11 +103,11 @@ func summarizeWarnings(warnings []cost.Warning) []Warning {
 		item := Warning{
 			Type:          string(warning.Type),
 			Service:       warning.Service,
-			Limit:         warning.Limit,
-			Actual:        warning.Actual,
-			Previous:      warning.Previous,
-			Change:        warning.Change,
-			ChangePercent: warning.ChangePercent,
+			Limit:         round(warning.Limit, 2),
+			Actual:        round(warning.Actual, 2),
+			Previous:      round(warning.Previous, 2),
+			Change:        round(warning.Change, 2),
+			ChangePercent: round(warning.ChangePercent, 2),
 		}
 		if !warning.Month.IsZero() {
 			item.Month = warning.Month.Format("2006-01")
@@ -111,4 +115,9 @@ func summarizeWarnings(warnings []cost.Warning) []Warning {
 		summary = append(summary, item)
 	}
 	return summary
+}
+
+func round(value float64, places int) float64 {
+	scale := math.Pow(10, float64(places))
+	return math.Round(value*scale) / scale
 }

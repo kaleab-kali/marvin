@@ -9,6 +9,7 @@ semantic versioning after the first tagged release.
 
 ### Added
 
+- Markdown and JSON report output for `marvin analyze`.
 - Terminal report output for `marvin analyze`.
 - Budget, service, and growth warning evaluation.
 - Month-over-month cost comparison helper.

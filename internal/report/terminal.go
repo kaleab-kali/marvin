@@ -9,32 +9,30 @@ import (
 )
 
 func WriteTerminal(w io.Writer, records []cost.Record, rules cost.WarningRules) error {
-	total := cost.TotalSpend(records)
-	services := cost.GroupByService(records)
-	months := cost.GroupByMonth(records)
-	comparisons := cost.CompareMonths(months)
-	warnings := cost.EvaluateWarnings(total, services, comparisons, rules)
+	return WriteTerminalSummary(w, BuildSummary(records, rules))
+}
 
+func WriteTerminalSummary(w io.Writer, summary Summary) error {
 	tabbed := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
 
 	fmt.Fprintln(tabbed, "Marvin Cost Report")
-	fmt.Fprintf(tabbed, "Total spend: %s\n\n", formatMoney(total))
+	fmt.Fprintf(tabbed, "Total spend: %s\n\n", formatMoney(summary.TotalSpend))
 
 	fmt.Fprintln(tabbed, "Monthly spend")
 	fmt.Fprintln(tabbed, "Month\tCost")
-	for _, month := range months {
-		fmt.Fprintf(tabbed, "%s\t%s\n", month.Month.Format("2006-01"), formatMoney(month.Cost))
+	for _, month := range summary.MonthlySpend {
+		fmt.Fprintf(tabbed, "%s\t%s\n", month.Month, formatMoney(month.Cost))
 	}
 
-	if len(comparisons) > 0 {
+	if len(summary.MonthOverMonth) > 0 {
 		fmt.Fprintln(tabbed)
 		fmt.Fprintln(tabbed, "Month-over-month")
 		fmt.Fprintln(tabbed, "Month\tPrevious\tCurrent\tChange\tChange %")
-		for _, comparison := range comparisons {
+		for _, comparison := range summary.MonthOverMonth {
 			fmt.Fprintf(
 				tabbed,
 				"%s\t%s\t%s\t%s\t%s\n",
-				comparison.Month.Format("2006-01"),
+				comparison.Month,
 				formatMoney(comparison.PreviousCost),
 				formatMoney(comparison.Cost),
 				formatSignedMoney(comparison.Change),
@@ -46,16 +44,16 @@ func WriteTerminal(w io.Writer, records []cost.Record, rules cost.WarningRules) 
 	fmt.Fprintln(tabbed)
 	fmt.Fprintln(tabbed, "Service spend")
 	fmt.Fprintln(tabbed, "Service\tCost")
-	for _, service := range services {
+	for _, service := range summary.ServiceSpend {
 		fmt.Fprintf(tabbed, "%s\t%s\n", service.Service, formatMoney(service.Cost))
 	}
 
 	fmt.Fprintln(tabbed)
 	fmt.Fprintln(tabbed, "Warnings")
-	if len(warnings) == 0 {
+	if len(summary.Warnings) == 0 {
 		fmt.Fprintln(tabbed, "None")
 	} else {
-		for _, warning := range warnings {
+		for _, warning := range summary.Warnings {
 			fmt.Fprintf(tabbed, "- %s\n", formatWarning(warning))
 		}
 	}
@@ -63,14 +61,14 @@ func WriteTerminal(w io.Writer, records []cost.Record, rules cost.WarningRules) 
 	return tabbed.Flush()
 }
 
-func formatWarning(warning cost.Warning) string {
+func formatWarning(warning Warning) string {
 	switch warning.Type {
-	case cost.WarningTotalBudget:
+	case string(cost.WarningTotalBudget):
 		return fmt.Sprintf("total spend %s exceeds budget %s", formatMoney(warning.Actual), formatMoney(warning.Limit))
-	case cost.WarningServiceBudget:
+	case string(cost.WarningServiceBudget):
 		return fmt.Sprintf("%s spend %s exceeds budget %s", warning.Service, formatMoney(warning.Actual), formatMoney(warning.Limit))
-	case cost.WarningGrowth:
-		return fmt.Sprintf("%s spend grew %s from %s to %s", warning.Month.Format("2006-01"), formatPercent(warning.ChangePercent), formatMoney(warning.Previous), formatMoney(warning.Actual))
+	case string(cost.WarningGrowth):
+		return fmt.Sprintf("%s spend grew %s from %s to %s", warning.Month, formatPercent(warning.ChangePercent), formatMoney(warning.Previous), formatMoney(warning.Actual))
 	default:
 		return "unknown warning"
 	}

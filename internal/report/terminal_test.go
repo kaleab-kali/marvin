@@ -61,6 +61,22 @@ func TestWriteTerminalShowsNoWarnings(t *testing.T) {
 	}
 }
 
+func TestWriteTerminalSummary(t *testing.T) {
+	summary := Summary{
+		TotalSpend:   100,
+		MonthlySpend: []MonthSpend{{Month: "2026-01", Cost: 100}},
+		ServiceSpend: []ServiceSpend{{Service: "Amazon EC2", Cost: 100}},
+	}
+
+	var output bytes.Buffer
+	if err := WriteTerminalSummary(&output, summary); err != nil {
+		t.Fatalf("expected terminal summary to write, got %v", err)
+	}
+	if !strings.Contains(output.String(), "Total spend: $100.00") {
+		t.Fatalf("expected terminal summary, got:\n%s", output.String())
+	}
+}
+
 func mustDate(t *testing.T, value string) time.Time {
 	t.Helper()
 

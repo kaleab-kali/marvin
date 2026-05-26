@@ -9,6 +9,7 @@ semantic versioning after the first tagged release.
 
 ### Added
 
+- Budget, service, and growth warning evaluation.
 - Month-over-month cost comparison helper.
 - Cost aggregation helpers for total, service, and month spend.
 - Cost Explorer CSV parser and sample fixture.

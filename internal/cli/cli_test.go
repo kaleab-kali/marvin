@@ -106,6 +106,66 @@ func TestSampleRejectsUnexpectedArgument(t *testing.T) {
 	}
 }
 
+func TestConfigValidateAcceptsValidConfig(t *testing.T) {
+	configPath := writeTempFile(t, "marvin.json", `{
+  "total_budget": 200,
+  "growth_limit_percent": 20,
+  "service_budgets": {
+    "Amazon EC2": 150
+  },
+  "ignore_services": ["Tax"]
+}`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"config", "validate", configPath}, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "is valid") {
+		t.Fatalf("expected valid config message, got %q", stdout.String())
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("expected empty stderr, got %q", stderr.String())
+	}
+}
+
+func TestConfigValidateRejectsMissingPath(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"config", "validate"}, &stdout, &stderr)
+
+	if code != ExitUsageError {
+		t.Fatalf("expected exit code %d, got %d", ExitUsageError, code)
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("expected empty stdout, got %q", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), "config validate requires a config path") {
+		t.Fatalf("expected missing path error, got %q", stderr.String())
+	}
+}
+
+func TestConfigValidateRejectsInvalidConfig(t *testing.T) {
+	configPath := writeTempFile(t, "marvin.json", `{"total_budget": -1}`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"config", "validate", configPath}, &stdout, &stderr)
+
+	if code != ExitRuntimeError {
+		t.Fatalf("expected exit code %d, got %d", ExitRuntimeError, code)
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("expected empty stdout, got %q", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), "validate config: total_budget must not be negative") {
+		t.Fatalf("expected invalid config error, got %q", stderr.String())
+	}
+}
+
 func TestRunRejectsUnknownCommand(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer

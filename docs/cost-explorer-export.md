@@ -87,6 +87,12 @@ To fail automation when configured warning rules trigger:
 marvin analyze --config examples/marvin.json --fail-on-warning path/to/cost-explorer.csv
 ```
 
+To validate a config file before using it:
+
+```sh
+marvin config validate examples/marvin.json
+```
+
 ## Handling Private Billing Data
 
 Do not commit real billing exports to the repository. Cost exports can include

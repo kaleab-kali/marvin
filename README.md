@@ -68,6 +68,12 @@ Or load warning thresholds from JSON:
 marvin analyze --config examples/marvin.json fixtures/sample-cost-explorer.csv
 ```
 
+Validate a config file:
+
+```sh
+marvin config validate examples/marvin.json
+```
+
 Choose an output format:
 
 ```sh
@@ -97,6 +103,7 @@ For guidance on exporting compatible AWS data, see
 
 ```text
 marvin analyze [flags] <cost-explorer.csv|->
+marvin config validate <marvin.json>
 marvin sample [flags]
 marvin version
 marvin help

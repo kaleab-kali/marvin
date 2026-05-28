@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/kaleab-kali/marvin/internal/config"
 	"github.com/kaleab-kali/marvin/internal/cost"
 	"github.com/kaleab-kali/marvin/internal/report"
 )
@@ -131,6 +132,18 @@ func parseAnalyzeArgs(args []string) (analyzeOptions, error) {
 			if err := setReportFormat(&options, strings.TrimPrefix(arg, "--format=")); err != nil {
 				return analyzeOptions{}, err
 			}
+		case arg == "--config":
+			value, ok := nextArg(args, &i)
+			if !ok {
+				return analyzeOptions{}, errors.New("--config requires a path")
+			}
+			if err := loadConfig(&options, value); err != nil {
+				return analyzeOptions{}, err
+			}
+		case strings.HasPrefix(arg, "--config="):
+			if err := loadConfig(&options, strings.TrimPrefix(arg, "--config=")); err != nil {
+				return analyzeOptions{}, err
+			}
 		case arg == "--service-budget":
 			value, ok := nextArg(args, &i)
 			if !ok {
@@ -171,6 +184,24 @@ func writeReport(stdout io.Writer, records []cost.Record, options analyzeOptions
 	default:
 		return fmt.Errorf("unsupported report format %q", options.format)
 	}
+}
+
+func loadConfig(options *analyzeOptions, path string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return fmt.Errorf("load config: %w", err)
+	}
+	defer file.Close()
+
+	rules, err := config.LoadWarningRules(file)
+	if err != nil {
+		return fmt.Errorf("load config: %w", err)
+	}
+	options.rules = rules
+	if options.rules.ServiceLimits == nil {
+		options.rules.ServiceLimits = make(map[string]float64)
+	}
+	return nil
 }
 
 func setReportFormat(options *analyzeOptions, value string) error {
@@ -235,6 +266,7 @@ func printAnalyzeUsage(w io.Writer) {
   marvin analyze [flags] <cost-explorer.csv>
 
 Flags:
+  --config <path>                       Load warning rules from a JSON config file.
   --format <terminal|markdown|json>    Output format. Defaults to terminal.
   --total-budget <amount>             Warn when total spend exceeds amount.
   --service-budget <service=amount>   Warn when service spend exceeds amount. Repeatable.

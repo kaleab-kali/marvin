@@ -54,6 +54,12 @@ Run with warning thresholds:
 marvin analyze --total-budget=300 --growth-limit-percent=10 --service-budget "Amazon Elastic Compute Cloud - Compute=200" fixtures/sample-cost-explorer.csv
 ```
 
+Or load warning thresholds from JSON:
+
+```sh
+marvin analyze --config examples/marvin.json fixtures/sample-cost-explorer.csv
+```
+
 Choose an output format:
 
 ```sh
@@ -75,6 +81,7 @@ marvin help
 Analyze flags:
 
 ```text
+--config <path>                         Load warning rules from a JSON config file.
 --format <terminal|markdown|json>    Output format. Defaults to terminal.
 --total-budget <amount>              Warn when total spend exceeds amount.
 --service-budget <service=amount>    Warn when service spend exceeds amount. Repeatable.

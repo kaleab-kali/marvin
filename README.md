@@ -82,10 +82,11 @@ Analyze flags:
 
 ```text
 --config <path>                         Load warning rules from a JSON config file.
---format <terminal|markdown|json>    Output format. Defaults to terminal.
---total-budget <amount>              Warn when total spend exceeds amount.
---service-budget <service=amount>    Warn when service spend exceeds amount. Repeatable.
---growth-limit-percent <percent>     Warn when month-over-month growth exceeds percent.
+--format <terminal|markdown|json>       Output format. Defaults to terminal.
+--ignore-service <service>              Exclude a service from totals and warnings. Repeatable.
+--total-budget <amount>                 Warn when total spend exceeds amount.
+--service-budget <service=amount>       Warn when service spend exceeds amount. Repeatable.
+--growth-limit-percent <percent>        Warn when month-over-month growth exceeds percent.
 ```
 
 ## Example Output

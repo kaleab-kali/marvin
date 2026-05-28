@@ -29,6 +29,23 @@ func TestLoadWarningRules(t *testing.T) {
 	}
 }
 
+func TestLoadIncludesIgnoredServices(t *testing.T) {
+	input := strings.NewReader(`{
+  "ignore_services": ["Tax", "Credits"]
+}`)
+
+	settings, err := Load(input)
+	if err != nil {
+		t.Fatalf("expected config to load, got %v", err)
+	}
+	if len(settings.IgnoreServices) != 2 {
+		t.Fatalf("expected 2 ignored services, got %d", len(settings.IgnoreServices))
+	}
+	if settings.IgnoreServices[0] != "Tax" || settings.IgnoreServices[1] != "Credits" {
+		t.Fatalf("unexpected ignored services: %+v", settings.IgnoreServices)
+	}
+}
+
 func TestLoadWarningRulesRejectsUnknownFields(t *testing.T) {
 	_, err := LoadWarningRules(strings.NewReader(`{"total_budget": 300, "budget": 100}`))
 	if err == nil {

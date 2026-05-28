@@ -18,9 +18,10 @@ const Version = "0.1.0-dev"
 var errAnalyzeHelp = errors.New("analyze help requested")
 
 type analyzeOptions struct {
-	path   string
-	format string
-	rules  cost.WarningRules
+	path            string
+	format          string
+	ignoredServices []string
+	rules           cost.WarningRules
 }
 
 func Run(args []string, stdout, stderr io.Writer) int {
@@ -68,6 +69,7 @@ func runAnalyze(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "parse cost CSV: %v\n", err)
 		return 1
 	}
+	records = cost.FilterIgnoredServices(records, options.ignoredServices)
 
 	if err := writeReport(stdout, records, options); err != nil {
 		fmt.Fprintf(stderr, "write report: %v\n", err)
@@ -144,6 +146,18 @@ func parseAnalyzeArgs(args []string) (analyzeOptions, error) {
 			if err := loadConfig(&options, strings.TrimPrefix(arg, "--config=")); err != nil {
 				return analyzeOptions{}, err
 			}
+		case arg == "--ignore-service":
+			value, ok := nextArg(args, &i)
+			if !ok {
+				return analyzeOptions{}, errors.New("--ignore-service requires a service name")
+			}
+			if err := addIgnoredService(&options, value); err != nil {
+				return analyzeOptions{}, err
+			}
+		case strings.HasPrefix(arg, "--ignore-service="):
+			if err := addIgnoredService(&options, strings.TrimPrefix(arg, "--ignore-service=")); err != nil {
+				return analyzeOptions{}, err
+			}
 		case arg == "--service-budget":
 			value, ok := nextArg(args, &i)
 			if !ok {
@@ -193,14 +207,24 @@ func loadConfig(options *analyzeOptions, path string) error {
 	}
 	defer file.Close()
 
-	rules, err := config.LoadWarningRules(file)
+	settings, err := config.Load(file)
 	if err != nil {
 		return fmt.Errorf("load config: %w", err)
 	}
-	options.rules = rules
+	options.rules = settings.Rules
+	options.ignoredServices = settings.IgnoreServices
 	if options.rules.ServiceLimits == nil {
 		options.rules.ServiceLimits = make(map[string]float64)
 	}
+	return nil
+}
+
+func addIgnoredService(options *analyzeOptions, value string) error {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return errors.New("--ignore-service requires a service name")
+	}
+	options.ignoredServices = append(options.ignoredServices, value)
 	return nil
 }
 
@@ -268,6 +292,7 @@ func printAnalyzeUsage(w io.Writer) {
 Flags:
   --config <path>                       Load warning rules from a JSON config file.
   --format <terminal|markdown|json>    Output format. Defaults to terminal.
+  --ignore-service <service>           Exclude a service from totals and warnings. Repeatable.
   --total-budget <amount>             Warn when total spend exceeds amount.
   --service-budget <service=amount>   Warn when service spend exceeds amount. Repeatable.
   --growth-limit-percent <percent>    Warn when month-over-month growth exceeds percent.

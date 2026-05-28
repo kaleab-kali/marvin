@@ -108,6 +108,56 @@ func TestAnalyzeWritesTerminalReport(t *testing.T) {
 	}
 }
 
+func TestAnalyzeUsesConfigFile(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+2026-02-01,Amazon EC2,150,USD
+`)
+	configPath := writeTempFile(t, "marvin.json", `{
+  "total_budget": 200,
+  "growth_limit_percent": 20,
+  "service_budgets": {
+    "Amazon EC2": 200
+  }
+}`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"analyze", "--config", configPath, csvPath}, &stdout, &stderr)
+
+	if code != 0 {
+		t.Fatalf("expected exit code 0, got %d with stderr %q", code, stderr.String())
+	}
+	output := stdout.String()
+	for _, want := range []string{
+		"total spend $250.00 exceeds budget $200.00",
+		"Amazon EC2 spend $250.00 exceeds budget $200.00",
+		"2026-02 spend grew +50.00%",
+	} {
+		if !strings.Contains(output, want) {
+			t.Fatalf("expected output to contain %q, got:\n%s", want, output)
+		}
+	}
+}
+
+func TestAnalyzeLetsFlagsOverrideEarlierConfig(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+`)
+	configPath := writeTempFile(t, "marvin.json", `{"total_budget": 50}`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"analyze", "--config", configPath, "--total-budget=200", csvPath}, &stdout, &stderr)
+
+	if code != 0 {
+		t.Fatalf("expected exit code 0, got %d with stderr %q", code, stderr.String())
+	}
+	if strings.Contains(stdout.String(), "exceeds budget") {
+		t.Fatalf("expected later flag to override config budget, got:\n%s", stdout.String())
+	}
+}
+
 func TestAnalyzeRejectsInvalidBudgetFlag(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
@@ -200,9 +250,15 @@ func TestAnalyzeRejectsUnsupportedFormat(t *testing.T) {
 func writeTempCSV(t *testing.T, content string) string {
 	t.Helper()
 
-	path := filepath.Join(t.TempDir(), "cost.csv")
+	return writeTempFile(t, "cost.csv", content)
+}
+
+func writeTempFile(t *testing.T, name string, content string) string {
+	t.Helper()
+
+	path := filepath.Join(t.TempDir(), name)
 	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
-		t.Fatalf("write temp CSV: %v", err)
+		t.Fatalf("write temp file: %v", err)
 	}
 	return path
 }

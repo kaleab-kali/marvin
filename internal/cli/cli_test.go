@@ -271,6 +271,45 @@ func TestAnalyzeWritesJSONReport(t *testing.T) {
 	}
 }
 
+func TestAnalyzeWritesReportToOutputFile(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+`)
+	outputPath := filepath.Join(t.TempDir(), "report.md")
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"analyze", "--format=markdown", "--output", outputPath, csvPath}, &stdout, &stderr)
+
+	if code != 0 {
+		t.Fatalf("expected exit code 0, got %d with stderr %q", code, stderr.String())
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("expected empty stdout when output file is used, got %q", stdout.String())
+	}
+	content, err := os.ReadFile(outputPath)
+	if err != nil {
+		t.Fatalf("expected output file to be written: %v", err)
+	}
+	if !strings.Contains(string(content), "# Marvin Cost Report") {
+		t.Fatalf("expected markdown report in output file, got:\n%s", string(content))
+	}
+}
+
+func TestAnalyzeRejectsEmptyOutputPath(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"analyze", "--output=", "cost.csv"}, &stdout, &stderr)
+
+	if code != 2 {
+		t.Fatalf("expected exit code 2, got %d", code)
+	}
+	if !strings.Contains(stderr.String(), "--output requires a path") {
+		t.Fatalf("expected output path error, got %q", stderr.String())
+	}
+}
+
 func TestAnalyzeRejectsUnsupportedFormat(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer

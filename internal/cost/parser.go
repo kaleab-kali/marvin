@@ -20,11 +20,56 @@ type csvColumns struct {
 }
 
 var (
-	serviceHeaders  = map[string]bool{"service": true, "servicename": true, "product": true, "productname": true}
-	startHeaders    = map[string]bool{"startdate": true, "start": true, "usagestartdate": true, "date": true, "month": true, "billingperiodstartdate": true}
-	endHeaders      = map[string]bool{"enddate": true, "end": true, "usageenddate": true, "billingperiodenddate": true}
-	costHeaders     = map[string]bool{"unblendedcost": true, "netunblendedcost": true, "amortizedcost": true, "blendedcost": true, "cost": true, "costusd": true, "amount": true, "totalcost": true}
-	currencyHeaders = map[string]bool{"currency": true, "currencycode": true}
+	serviceHeaders = map[string]bool{
+		"lineitemproductcode": true,
+		"product":             true,
+		"productname":         true,
+		"productservicecode":  true,
+		"service":             true,
+		"servicecode":         true,
+		"servicename":         true,
+	}
+	startHeaders = map[string]bool{
+		"billingperiodstartdate": true,
+		"date":                   true,
+		"lineitemusagestartdate": true,
+		"month":                  true,
+		"start":                  true,
+		"startdate":              true,
+		"usagestartdate":         true,
+		"usagestarttime":         true,
+	}
+	endHeaders = map[string]bool{
+		"billingperiodenddate": true,
+		"end":                  true,
+		"enddate":              true,
+		"lineitemusageenddate": true,
+		"usageenddate":         true,
+		"usageendtime":         true,
+	}
+	costHeaders = map[string]bool{
+		"amount":                      true,
+		"amortizedcost":               true,
+		"blendedcost":                 true,
+		"cost":                        true,
+		"costusd":                     true,
+		"lineitemblendedcost":         true,
+		"lineitemnetunblendedcost":    true,
+		"lineitemunblendedcost":       true,
+		"netamortizedcost":            true,
+		"netunblendedcost":            true,
+		"reservationamortizedupfront": true,
+		"totalcost":                   true,
+		"unblendedcost":               true,
+	}
+	currencyHeaders = map[string]bool{
+		"currency":                true,
+		"currencycode":            true,
+		"lineitemcurrencycode":    true,
+		"pricingcurrency":         true,
+		"pricingcurrencycode":     true,
+		"pricingtermcurrencycode": true,
+	}
 )
 
 func ParseCostExplorerCSV(r io.Reader) ([]Record, error) {
@@ -157,9 +202,14 @@ func parseDate(value string) (time.Time, error) {
 	}
 
 	layouts := []string{
+		time.RFC3339,
 		"2006-01-02",
+		"2006-01-02 15:04:05",
+		"2006-01-02 15:04",
 		"2006/01/02",
+		"2006/01/02 15:04:05",
 		"1/2/2006",
+		"1/2/2006 15:04",
 		"01/02/2006",
 		"2006-01",
 		"Jan 2006",
@@ -185,6 +235,8 @@ func parseCostValue(value string) (float64, error) {
 	value = strings.Trim(value, "()")
 	value = strings.ReplaceAll(value, ",", "")
 	value = strings.ReplaceAll(value, "$", "")
+	value = strings.ReplaceAll(value, "€", "")
+	value = strings.ReplaceAll(value, "£", "")
 	value = strings.TrimSpace(value)
 
 	fields := strings.Fields(value)

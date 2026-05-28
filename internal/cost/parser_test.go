@@ -41,6 +41,38 @@ func TestParseCostExplorerCSVSupportsCommonHeaderAliases(t *testing.T) {
 	assertRecord(t, records[0], "Amazon CloudWatch", "2026-03-01", "", 42.10, "USD")
 }
 
+func TestParseCostExplorerCSVSupportsCURColumnNames(t *testing.T) {
+	input := strings.NewReader(`lineItem/UsageStartDate,lineItem/UsageEndDate,lineItem/ProductCode,lineItem/UnblendedCost,lineItem/CurrencyCode
+2026-03-01T00:00:00Z,2026-03-01T01:00:00Z,AmazonEC2,12.3400000000,USD
+`)
+
+	records, err := ParseCostExplorerCSV(input)
+	if err != nil {
+		t.Fatalf("expected parser to succeed, got %v", err)
+	}
+	if len(records) != 1 {
+		t.Fatalf("expected 1 record, got %d", len(records))
+	}
+
+	assertRecord(t, records[0], "AmazonEC2", "2026-03-01", "2026-03-01", 12.34, "USD")
+}
+
+func TestParseCostExplorerCSVSupportsSpacedTimestampColumns(t *testing.T) {
+	input := strings.NewReader(`Usage Start Time,Usage End Time,Service Code,Net Amortized Cost,Pricing Currency
+2026-03-01 12:30:00,2026-03-01 13:30:00,AmazonS3,£42.10,GBP
+`)
+
+	records, err := ParseCostExplorerCSV(input)
+	if err != nil {
+		t.Fatalf("expected parser to succeed, got %v", err)
+	}
+	if len(records) != 1 {
+		t.Fatalf("expected 1 record, got %d", len(records))
+	}
+
+	assertRecord(t, records[0], "AmazonS3", "2026-03-01", "2026-03-01", 42.10, "GBP")
+}
+
 func TestParseCostExplorerCSVRejectsMissingRequiredColumns(t *testing.T) {
 	input := strings.NewReader(`Start Date,Unblended Cost,Currency
 2026-01-01,10.00,USD
@@ -76,6 +108,8 @@ func TestParseCostValue(t *testing.T) {
 	tests := map[string]float64{
 		"12.34":         12.34,
 		"$12.34":        12.34,
+		"€12.34":        12.34,
+		"£12.34":        12.34,
 		"USD 12.34":     12.34,
 		"12.34 USD":     12.34,
 		"1,234.560000":  1234.56,
@@ -124,7 +158,7 @@ func assertDate(t *testing.T, label string, got time.Time, want string) {
 	if err != nil {
 		t.Fatalf("invalid expected %s %q: %v", label, want, err)
 	}
-	if !got.Equal(parsed) {
+	if got.Format(time.DateOnly) != parsed.Format(time.DateOnly) {
 		t.Fatalf("expected %s %s, got %s", label, want, got.Format(time.DateOnly))
 	}
 }

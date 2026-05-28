@@ -23,6 +23,7 @@ const (
 )
 
 var errAnalyzeHelp = errors.New("analyze help requested")
+var errConfigHelp = errors.New("config help requested")
 var errSampleHelp = errors.New("sample help requested")
 
 type analyzeOptions struct {
@@ -53,6 +54,8 @@ func RunWithIO(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return ExitOK
 	case "analyze":
 		return runAnalyze(args[1:], stdin, stdout, stderr)
+	case "config":
+		return runConfigCommand(args[1:], stdout, stderr)
 	case "sample":
 		return runSample(args[1:], stdout, stderr)
 	default:
@@ -113,6 +116,52 @@ func runAnalyze(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return ExitWarning
 	}
 
+	return ExitOK
+}
+
+func runConfigCommand(args []string, stdout, stderr io.Writer) int {
+	if len(args) == 0 {
+		printConfigUsage(stdout)
+		return ExitOK
+	}
+
+	switch args[0] {
+	case "-h", "--help", "help":
+		printConfigUsage(stdout)
+		return ExitOK
+	case "validate":
+		return runConfigValidate(args[1:], stdout, stderr)
+	default:
+		fmt.Fprintf(stderr, "unknown config command %q\n\n", args[0])
+		printConfigUsage(stderr)
+		return ExitUsageError
+	}
+}
+
+func runConfigValidate(args []string, stdout, stderr io.Writer) int {
+	path, err := parseConfigValidateArgs(args)
+	if errors.Is(err, errConfigHelp) {
+		printConfigValidateUsage(stdout)
+		return ExitOK
+	}
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return ExitUsageError
+	}
+
+	file, err := os.Open(path)
+	if err != nil {
+		fmt.Fprintf(stderr, "open config: %v\n", err)
+		return ExitRuntimeError
+	}
+	defer file.Close()
+
+	if _, err := config.Load(file); err != nil {
+		fmt.Fprintf(stderr, "validate config: %v\n", err)
+		return ExitRuntimeError
+	}
+
+	fmt.Fprintf(stdout, "config %s is valid\n", path)
 	return ExitOK
 }
 
@@ -274,6 +323,28 @@ func parseAnalyzeArgs(args []string) (analyzeOptions, error) {
 	return options, nil
 }
 
+func parseConfigValidateArgs(args []string) (string, error) {
+	var path string
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		switch {
+		case arg == "-h" || arg == "--help":
+			return "", errConfigHelp
+		case strings.HasPrefix(arg, "-"):
+			return "", fmt.Errorf("unknown config validate flag %q", arg)
+		default:
+			if path != "" {
+				return "", fmt.Errorf("unexpected extra argument %q", arg)
+			}
+			path = arg
+		}
+	}
+	if path == "" {
+		return "", errors.New("config validate requires a config path")
+	}
+	return path, nil
+}
+
 func parseSampleArgs(args []string) (string, error) {
 	var outputPath string
 	for i := 0; i < len(args); i++ {
@@ -413,6 +484,7 @@ func printUsage(w io.Writer) {
 
 Usage:
   marvin analyze [flags] <cost-explorer.csv|->
+  marvin config validate <marvin.json>
   marvin sample [flags]
   marvin version
   marvin help
@@ -435,6 +507,19 @@ Flags:
   --total-budget <amount>             Warn when total spend exceeds amount.
   --service-budget <service=amount>   Warn when service spend exceeds amount. Repeatable.
   --growth-limit-percent <percent>    Warn when month-over-month growth exceeds percent.
+`)
+}
+
+func printConfigUsage(w io.Writer) {
+	fmt.Fprint(w, `Usage:
+  marvin config validate <marvin.json>
+  marvin config help
+`)
+}
+
+func printConfigValidateUsage(w io.Writer) {
+	fmt.Fprint(w, `Usage:
+  marvin config validate <marvin.json>
 `)
 }
 

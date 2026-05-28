@@ -9,6 +9,7 @@ semantic versioning after the first tagged release.
 
 ### Added
 
+- Sample CSV generation with `marvin sample`.
 - Support for additional AWS cost CSV column names and timestamp formats.
 - Stable analyze exit codes and `--fail-on-warning`.
 - Report file output with `marvin analyze --output`.

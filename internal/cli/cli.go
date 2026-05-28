@@ -23,6 +23,7 @@ const (
 )
 
 var errAnalyzeHelp = errors.New("analyze help requested")
+var errSampleHelp = errors.New("sample help requested")
 
 type analyzeOptions struct {
 	path            string
@@ -48,6 +49,8 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		return ExitOK
 	case "analyze":
 		return runAnalyze(args[1:], stdout, stderr)
+	case "sample":
+		return runSample(args[1:], stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "unknown command %q\n\n", args[0])
 		printUsage(stderr)
@@ -100,6 +103,37 @@ func runAnalyze(args []string, stdout, stderr io.Writer) int {
 
 	if options.failOnWarning && len(summary.Warnings) > 0 {
 		return ExitWarning
+	}
+
+	return ExitOK
+}
+
+func runSample(args []string, stdout, stderr io.Writer) int {
+	outputPath, err := parseSampleArgs(args)
+	if errors.Is(err, errSampleHelp) {
+		printSampleUsage(stdout)
+		return ExitOK
+	}
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return ExitUsageError
+	}
+
+	output := stdout
+	var outputFile *os.File
+	if outputPath != "" {
+		outputFile, err = os.Create(outputPath)
+		if err != nil {
+			fmt.Fprintf(stderr, "create sample CSV: %v\n", err)
+			return ExitRuntimeError
+		}
+		defer outputFile.Close()
+		output = outputFile
+	}
+
+	if _, err := io.WriteString(output, sampleCostExplorerCSV); err != nil {
+		fmt.Fprintf(stderr, "write sample CSV: %v\n", err)
+		return ExitRuntimeError
 	}
 
 	return ExitOK
@@ -227,6 +261,38 @@ func parseAnalyzeArgs(args []string) (analyzeOptions, error) {
 	return options, nil
 }
 
+func parseSampleArgs(args []string) (string, error) {
+	var outputPath string
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		switch {
+		case arg == "-h" || arg == "--help":
+			return "", errSampleHelp
+		case arg == "--output":
+			value, ok := nextArg(args, &i)
+			if !ok {
+				return "", errors.New("--output requires a path")
+			}
+			path, err := sampleOutputPath(value)
+			if err != nil {
+				return "", err
+			}
+			outputPath = path
+		case strings.HasPrefix(arg, "--output="):
+			path, err := sampleOutputPath(strings.TrimPrefix(arg, "--output="))
+			if err != nil {
+				return "", err
+			}
+			outputPath = path
+		case strings.HasPrefix(arg, "-"):
+			return "", fmt.Errorf("unknown sample flag %q", arg)
+		default:
+			return "", fmt.Errorf("unexpected sample argument %q", arg)
+		}
+	}
+	return outputPath, nil
+}
+
 func writeReport(stdout io.Writer, summary report.Summary, options analyzeOptions) error {
 	switch options.format {
 	case "terminal":
@@ -247,6 +313,14 @@ func setOutputPath(options *analyzeOptions, value string) error {
 	}
 	options.outputPath = value
 	return nil
+}
+
+func sampleOutputPath(value string) (string, error) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return "", errors.New("--output requires a path")
+	}
+	return value, nil
 }
 
 func loadConfig(options *analyzeOptions, path string) error {
@@ -326,6 +400,7 @@ func printUsage(w io.Writer) {
 
 Usage:
   marvin analyze [flags] <cost-explorer.csv>
+  marvin sample [flags]
   marvin version
   marvin help
 
@@ -349,3 +424,20 @@ Flags:
   --growth-limit-percent <percent>    Warn when month-over-month growth exceeds percent.
 `)
 }
+
+func printSampleUsage(w io.Writer) {
+	fmt.Fprint(w, `Usage:
+  marvin sample [flags]
+
+Flags:
+  --output <path>    Write the sample CSV to a file instead of stdout.
+`)
+}
+
+const sampleCostExplorerCSV = `Start Date,End Date,Service,Unblended Cost,Currency
+2026-01-01,2026-01-31,Amazon Elastic Compute Cloud - Compute,$124.32,USD
+2026-01-01,2026-01-31,Amazon Simple Storage Service,$18.90,USD
+2026-02-01,2026-02-28,Amazon Elastic Compute Cloud - Compute,$143.81,USD
+2026-02-01,2026-02-28,Amazon Simple Storage Service,$21.44,USD
+2026-02-01,2026-02-28,AWS Key Management Service,$3.12,USD
+`

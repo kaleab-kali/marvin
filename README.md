@@ -20,6 +20,7 @@ The current CLI supports:
 - Showing month-over-month changes.
 - Emitting budget, service, and growth warnings from command-line thresholds.
 - Producing terminal, Markdown, and JSON reports.
+- Generating a small sample CSV for local testing.
 
 Live AWS API access, scheduled reports, Slack/email notifications, and anomaly
 detection are intentionally out of scope until the local CSV workflow is useful
@@ -46,6 +47,13 @@ Run the sample report:
 
 ```sh
 marvin analyze fixtures/sample-cost-explorer.csv
+```
+
+Generate a sample CSV:
+
+```sh
+marvin sample --output sample-costs.csv
+marvin analyze sample-costs.csv
 ```
 
 Run with warning thresholds:
@@ -80,6 +88,7 @@ marvin analyze --format markdown --output report.md fixtures/sample-cost-explore
 
 ```text
 marvin analyze [flags] <cost-explorer.csv>
+marvin sample [flags]
 marvin version
 marvin help
 ```
@@ -95,6 +104,12 @@ Analyze flags:
 --total-budget <amount>                 Warn when total spend exceeds amount.
 --service-budget <service=amount>       Warn when service spend exceeds amount. Repeatable.
 --growth-limit-percent <percent>        Warn when month-over-month growth exceeds percent.
+```
+
+Sample flags:
+
+```text
+--output <path>                         Write the sample CSV to a file instead of stdout.
 ```
 
 Exit codes:

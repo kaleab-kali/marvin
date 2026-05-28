@@ -43,6 +43,69 @@ func TestRunShowsVersion(t *testing.T) {
 	}
 }
 
+func TestSampleWritesCostExplorerCSV(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"sample"}, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
+	}
+	output := stdout.String()
+	for _, want := range []string{
+		"Start Date,End Date,Service,Unblended Cost,Currency",
+		"Amazon Elastic Compute Cloud - Compute",
+		"AWS Key Management Service",
+	} {
+		if !strings.Contains(output, want) {
+			t.Fatalf("expected sample output to contain %q, got:\n%s", want, output)
+		}
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("expected empty stderr, got %q", stderr.String())
+	}
+}
+
+func TestSampleWritesCostExplorerCSVToOutputFile(t *testing.T) {
+	outputPath := filepath.Join(t.TempDir(), "sample.csv")
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"sample", "--output", outputPath}, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("expected empty stdout when output file is used, got %q", stdout.String())
+	}
+	content, err := os.ReadFile(outputPath)
+	if err != nil {
+		t.Fatalf("expected sample file to be written: %v", err)
+	}
+	if !strings.Contains(string(content), "Start Date,End Date,Service,Unblended Cost,Currency") {
+		t.Fatalf("expected sample CSV in output file, got:\n%s", string(content))
+	}
+}
+
+func TestSampleRejectsUnexpectedArgument(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"sample", "extra.csv"}, &stdout, &stderr)
+
+	if code != ExitUsageError {
+		t.Fatalf("expected exit code %d, got %d", ExitUsageError, code)
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("expected empty stdout, got %q", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), `unexpected sample argument "extra.csv"`) {
+		t.Fatalf("expected unexpected argument error, got %q", stderr.String())
+	}
+}
+
 func TestRunRejectsUnknownCommand(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer

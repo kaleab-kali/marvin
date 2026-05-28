@@ -172,7 +172,8 @@ See `CONTRIBUTING.md` for local setup and pull request expectations.
 
 Versioned release builds are produced by GitHub Actions when a tag matching
 `v*.*.*` is pushed. The release workflow builds Linux, macOS, and Windows
-binaries and uploads SHA-256 checksums with each artifact.
+binaries, injects the tag into `marvin version`, and uploads SHA-256 checksums
+with each artifact.
 
 ## License
 

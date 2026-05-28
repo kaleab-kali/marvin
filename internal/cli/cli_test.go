@@ -140,6 +140,47 @@ func TestAnalyzeUsesConfigFile(t *testing.T) {
 	}
 }
 
+func TestAnalyzeIgnoresServicesFromConfig(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+2026-01-01,Tax,20,USD
+`)
+	configPath := writeTempFile(t, "marvin.json", `{"ignore_services": ["Tax"]}`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"analyze", "--config", configPath, csvPath}, &stdout, &stderr)
+
+	if code != 0 {
+		t.Fatalf("expected exit code 0, got %d with stderr %q", code, stderr.String())
+	}
+	output := stdout.String()
+	if !strings.Contains(output, "Total spend: $100.00") {
+		t.Fatalf("expected ignored tax to be excluded, got:\n%s", output)
+	}
+	if strings.Contains(output, "Tax") {
+		t.Fatalf("expected Tax to be absent from report, got:\n%s", output)
+	}
+}
+
+func TestAnalyzeIgnoresServicesFromFlag(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+2026-01-01,Tax,20,USD
+`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"analyze", "--ignore-service=Tax", csvPath}, &stdout, &stderr)
+
+	if code != 0 {
+		t.Fatalf("expected exit code 0, got %d with stderr %q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "Total spend: $100.00") {
+		t.Fatalf("expected ignored tax to be excluded, got:\n%s", stdout.String())
+	}
+}
+
 func TestAnalyzeLetsFlagsOverrideEarlierConfig(t *testing.T) {
 	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
 2026-01-01,Amazon EC2,100,USD

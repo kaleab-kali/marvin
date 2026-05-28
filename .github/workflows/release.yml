@@ -75,8 +75,12 @@ jobs:
           GOOS: ${{ matrix.goos }}
         run: |
           mkdir -p dist
+          version="0.1.0-dev"
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            version="${GITHUB_REF_NAME}"
+          fi
           binary="marvin-${GOOS}-${GOARCH}${{ matrix.ext }}"
-          go build -trimpath -ldflags="-s -w" -o "dist/${binary}" ./cmd/marvin
+          go build -trimpath -ldflags="-s -w -X github.com/kaleab-kali/marvin/internal/cli.Version=${version}" -o "dist/${binary}" ./cmd/marvin
           (cd dist && sha256sum "${binary}" > "${binary}.sha256")
 
       - name: Upload artifact

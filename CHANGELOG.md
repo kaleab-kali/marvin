@@ -9,6 +9,7 @@ semantic versioning after the first tagged release.
 
 ### Added
 
+- Release version injection for tagged CLI binaries.
 - Release build workflow for tagged CLI binaries.
 - Standard input support with `marvin analyze -`.
 - Golden test coverage for terminal and JSON reports.

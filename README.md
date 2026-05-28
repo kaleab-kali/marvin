@@ -71,7 +71,8 @@ marvin analyze --config examples/marvin.json fixtures/sample-cost-explorer.csv
 Validate a config file:
 
 ```sh
-marvin config validate examples/marvin.json
+marvin config sample --output marvin.json
+marvin config validate marvin.json
 ```
 
 Choose an output format:
@@ -103,6 +104,7 @@ For guidance on exporting compatible AWS data, see
 
 ```text
 marvin analyze [flags] <cost-explorer.csv|->
+marvin config sample [flags]
 marvin config validate <marvin.json>
 marvin sample [flags]
 marvin version
@@ -126,6 +128,12 @@ Sample flags:
 
 ```text
 --output <path>                         Write the sample CSV to a file instead of stdout.
+```
+
+Config sample flags:
+
+```text
+--output <path>                         Write the sample config to a file instead of stdout.
 ```
 
 Exit codes:

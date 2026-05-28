@@ -129,6 +129,8 @@ func runConfigCommand(args []string, stdout, stderr io.Writer) int {
 	case "-h", "--help", "help":
 		printConfigUsage(stdout)
 		return ExitOK
+	case "sample":
+		return runConfigSample(args[1:], stdout, stderr)
 	case "validate":
 		return runConfigValidate(args[1:], stdout, stderr)
 	default:
@@ -136,6 +138,37 @@ func runConfigCommand(args []string, stdout, stderr io.Writer) int {
 		printConfigUsage(stderr)
 		return ExitUsageError
 	}
+}
+
+func runConfigSample(args []string, stdout, stderr io.Writer) int {
+	outputPath, err := parseConfigSampleArgs(args)
+	if errors.Is(err, errConfigHelp) {
+		printConfigSampleUsage(stdout)
+		return ExitOK
+	}
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return ExitUsageError
+	}
+
+	output := stdout
+	var outputFile *os.File
+	if outputPath != "" {
+		outputFile, err = os.Create(outputPath)
+		if err != nil {
+			fmt.Fprintf(stderr, "create sample config: %v\n", err)
+			return ExitRuntimeError
+		}
+		defer outputFile.Close()
+		output = outputFile
+	}
+
+	if _, err := io.WriteString(output, sampleConfigJSON); err != nil {
+		fmt.Fprintf(stderr, "write sample config: %v\n", err)
+		return ExitRuntimeError
+	}
+
+	return ExitOK
 }
 
 func runConfigValidate(args []string, stdout, stderr io.Writer) int {
@@ -323,6 +356,38 @@ func parseAnalyzeArgs(args []string) (analyzeOptions, error) {
 	return options, nil
 }
 
+func parseConfigSampleArgs(args []string) (string, error) {
+	var outputPath string
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		switch {
+		case arg == "-h" || arg == "--help":
+			return "", errConfigHelp
+		case arg == "--output":
+			value, ok := nextArg(args, &i)
+			if !ok {
+				return "", errors.New("--output requires a path")
+			}
+			path, err := sampleOutputPath(value)
+			if err != nil {
+				return "", err
+			}
+			outputPath = path
+		case strings.HasPrefix(arg, "--output="):
+			path, err := sampleOutputPath(strings.TrimPrefix(arg, "--output="))
+			if err != nil {
+				return "", err
+			}
+			outputPath = path
+		case strings.HasPrefix(arg, "-"):
+			return "", fmt.Errorf("unknown config sample flag %q", arg)
+		default:
+			return "", fmt.Errorf("unexpected config sample argument %q", arg)
+		}
+	}
+	return outputPath, nil
+}
+
 func parseConfigValidateArgs(args []string) (string, error) {
 	var path string
 	for i := 0; i < len(args); i++ {
@@ -484,6 +549,7 @@ func printUsage(w io.Writer) {
 
 Usage:
   marvin analyze [flags] <cost-explorer.csv|->
+  marvin config sample [flags]
   marvin config validate <marvin.json>
   marvin sample [flags]
   marvin version
@@ -512,8 +578,18 @@ Flags:
 
 func printConfigUsage(w io.Writer) {
 	fmt.Fprint(w, `Usage:
+  marvin config sample [flags]
   marvin config validate <marvin.json>
   marvin config help
+`)
+}
+
+func printConfigSampleUsage(w io.Writer) {
+	fmt.Fprint(w, `Usage:
+  marvin config sample [flags]
+
+Flags:
+  --output <path>    Write the sample config to a file instead of stdout.
 `)
 }
 
@@ -538,4 +614,16 @@ const sampleCostExplorerCSV = `Start Date,End Date,Service,Unblended Cost,Curren
 2026-02-01,2026-02-28,Amazon Elastic Compute Cloud - Compute,$143.81,USD
 2026-02-01,2026-02-28,Amazon Simple Storage Service,$21.44,USD
 2026-02-01,2026-02-28,AWS Key Management Service,$3.12,USD
+`
+
+const sampleConfigJSON = `{
+  "total_budget": 300,
+  "growth_limit_percent": 10,
+  "service_budgets": {
+    "Amazon Elastic Compute Cloud - Compute": 200
+  },
+  "ignore_services": [
+    "Tax"
+  ]
+}
 `

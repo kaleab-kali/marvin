@@ -9,6 +9,7 @@ semantic versioning after the first tagged release.
 
 ### Added
 
+- Stable analyze exit codes and `--fail-on-warning`.
 - Report file output with `marvin analyze --output`.
 - Golden test coverage for Markdown reports.
 - Ignore-service rules for excluding services from reports and warnings.

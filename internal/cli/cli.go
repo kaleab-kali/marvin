@@ -15,12 +15,20 @@ import (
 
 const Version = "0.1.0-dev"
 
+const (
+	ExitOK           = 0
+	ExitRuntimeError = 1
+	ExitUsageError   = 2
+	ExitWarning      = 3
+)
+
 var errAnalyzeHelp = errors.New("analyze help requested")
 
 type analyzeOptions struct {
 	path            string
 	format          string
 	outputPath      string
+	failOnWarning   bool
 	ignoredServices []string
 	rules           cost.WarningRules
 }
@@ -28,22 +36,22 @@ type analyzeOptions struct {
 func Run(args []string, stdout, stderr io.Writer) int {
 	if len(args) == 0 {
 		printUsage(stdout)
-		return 0
+		return ExitOK
 	}
 
 	switch args[0] {
 	case "-h", "--help", "help":
 		printUsage(stdout)
-		return 0
+		return ExitOK
 	case "-v", "--version", "version":
 		fmt.Fprintf(stdout, "marvin %s\n", Version)
-		return 0
+		return ExitOK
 	case "analyze":
 		return runAnalyze(args[1:], stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "unknown command %q\n\n", args[0])
 		printUsage(stderr)
-		return 2
+		return ExitUsageError
 	}
 }
 
@@ -51,26 +59,27 @@ func runAnalyze(args []string, stdout, stderr io.Writer) int {
 	options, err := parseAnalyzeArgs(args)
 	if errors.Is(err, errAnalyzeHelp) {
 		printAnalyzeUsage(stdout)
-		return 0
+		return ExitOK
 	}
 	if err != nil {
 		fmt.Fprintln(stderr, err)
-		return 2
+		return ExitUsageError
 	}
 
 	file, err := os.Open(options.path)
 	if err != nil {
 		fmt.Fprintf(stderr, "open cost CSV: %v\n", err)
-		return 1
+		return ExitRuntimeError
 	}
 	defer file.Close()
 
 	records, err := cost.ParseCostExplorerCSV(file)
 	if err != nil {
 		fmt.Fprintf(stderr, "parse cost CSV: %v\n", err)
-		return 1
+		return ExitRuntimeError
 	}
 	records = cost.FilterIgnoredServices(records, options.ignoredServices)
+	summary := report.BuildSummary(records, options.rules)
 
 	output := stdout
 	var outputFile *os.File
@@ -84,12 +93,16 @@ func runAnalyze(args []string, stdout, stderr io.Writer) int {
 		output = outputFile
 	}
 
-	if err := writeReport(output, records, options); err != nil {
+	if err := writeReport(output, summary, options); err != nil {
 		fmt.Fprintf(stderr, "write report: %v\n", err)
-		return 1
+		return ExitRuntimeError
 	}
 
-	return 0
+	if options.failOnWarning && len(summary.Warnings) > 0 {
+		return ExitWarning
+	}
+
+	return ExitOK
 }
 
 func parseAnalyzeArgs(args []string) (analyzeOptions, error) {
@@ -147,6 +160,8 @@ func parseAnalyzeArgs(args []string) (analyzeOptions, error) {
 			if err := setReportFormat(&options, strings.TrimPrefix(arg, "--format=")); err != nil {
 				return analyzeOptions{}, err
 			}
+		case arg == "--fail-on-warning":
+			options.failOnWarning = true
 		case arg == "--output":
 			value, ok := nextArg(args, &i)
 			if !ok {
@@ -212,14 +227,14 @@ func parseAnalyzeArgs(args []string) (analyzeOptions, error) {
 	return options, nil
 }
 
-func writeReport(stdout io.Writer, records []cost.Record, options analyzeOptions) error {
+func writeReport(stdout io.Writer, summary report.Summary, options analyzeOptions) error {
 	switch options.format {
 	case "terminal":
-		return report.WriteTerminal(stdout, records, options.rules)
+		return report.WriteTerminalSummary(stdout, summary)
 	case "markdown":
-		return report.WriteMarkdown(stdout, records, options.rules)
+		return report.WriteMarkdownSummary(stdout, summary)
 	case "json":
-		return report.WriteJSON(stdout, records, options.rules)
+		return report.WriteJSONSummary(stdout, summary)
 	default:
 		return fmt.Errorf("unsupported report format %q", options.format)
 	}
@@ -325,6 +340,7 @@ func printAnalyzeUsage(w io.Writer) {
 
 Flags:
   --config <path>                       Load warning rules from a JSON config file.
+  --fail-on-warning                     Exit with code 3 when warnings are present.
   --format <terminal|markdown|json>    Output format. Defaults to terminal.
   --ignore-service <service>           Exclude a service from totals and warnings. Repeatable.
   --output <path>                       Write the report to a file instead of stdout.

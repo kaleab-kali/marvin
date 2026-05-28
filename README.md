@@ -168,6 +168,12 @@ until the first release is complete.
 
 See `CONTRIBUTING.md` for local setup and pull request expectations.
 
+## Releases
+
+Versioned release builds are produced by GitHub Actions when a tag matching
+`v*.*.*` is pushed. The release workflow builds Linux, macOS, and Windows
+binaries and uploads SHA-256 checksums with each artifact.
+
 ## License
 
 Marvin is released under the MIT License.

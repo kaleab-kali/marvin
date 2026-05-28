@@ -70,6 +70,12 @@ marvin analyze --format json fixtures/sample-cost-explorer.csv
 
 `terminal` is the default format.
 
+Write a report to a file:
+
+```sh
+marvin analyze --format markdown --output report.md fixtures/sample-cost-explorer.csv
+```
+
 ## CLI Usage
 
 ```text
@@ -84,6 +90,7 @@ Analyze flags:
 --config <path>                         Load warning rules from a JSON config file.
 --format <terminal|markdown|json>       Output format. Defaults to terminal.
 --ignore-service <service>              Exclude a service from totals and warnings. Repeatable.
+--output <path>                         Write the report to a file instead of stdout.
 --total-budget <amount>                 Warn when total spend exceeds amount.
 --service-budget <service=amount>       Warn when service spend exceeds amount. Repeatable.
 --growth-limit-percent <percent>        Warn when month-over-month growth exceeds percent.

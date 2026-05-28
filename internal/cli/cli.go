@@ -20,6 +20,7 @@ var errAnalyzeHelp = errors.New("analyze help requested")
 type analyzeOptions struct {
 	path            string
 	format          string
+	outputPath      string
 	ignoredServices []string
 	rules           cost.WarningRules
 }
@@ -71,7 +72,19 @@ func runAnalyze(args []string, stdout, stderr io.Writer) int {
 	}
 	records = cost.FilterIgnoredServices(records, options.ignoredServices)
 
-	if err := writeReport(stdout, records, options); err != nil {
+	output := stdout
+	var outputFile *os.File
+	if options.outputPath != "" {
+		outputFile, err = os.Create(options.outputPath)
+		if err != nil {
+			fmt.Fprintf(stderr, "create output file: %v\n", err)
+			return 1
+		}
+		defer outputFile.Close()
+		output = outputFile
+	}
+
+	if err := writeReport(output, records, options); err != nil {
 		fmt.Fprintf(stderr, "write report: %v\n", err)
 		return 1
 	}
@@ -132,6 +145,18 @@ func parseAnalyzeArgs(args []string) (analyzeOptions, error) {
 			}
 		case strings.HasPrefix(arg, "--format="):
 			if err := setReportFormat(&options, strings.TrimPrefix(arg, "--format=")); err != nil {
+				return analyzeOptions{}, err
+			}
+		case arg == "--output":
+			value, ok := nextArg(args, &i)
+			if !ok {
+				return analyzeOptions{}, errors.New("--output requires a path")
+			}
+			if err := setOutputPath(&options, value); err != nil {
+				return analyzeOptions{}, err
+			}
+		case strings.HasPrefix(arg, "--output="):
+			if err := setOutputPath(&options, strings.TrimPrefix(arg, "--output=")); err != nil {
 				return analyzeOptions{}, err
 			}
 		case arg == "--config":
@@ -198,6 +223,15 @@ func writeReport(stdout io.Writer, records []cost.Record, options analyzeOptions
 	default:
 		return fmt.Errorf("unsupported report format %q", options.format)
 	}
+}
+
+func setOutputPath(options *analyzeOptions, value string) error {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return errors.New("--output requires a path")
+	}
+	options.outputPath = value
+	return nil
 }
 
 func loadConfig(options *analyzeOptions, path string) error {
@@ -293,6 +327,7 @@ Flags:
   --config <path>                       Load warning rules from a JSON config file.
   --format <terminal|markdown|json>    Output format. Defaults to terminal.
   --ignore-service <service>           Exclude a service from totals and warnings. Repeatable.
+  --output <path>                       Write the report to a file instead of stdout.
   --total-budget <amount>             Warn when total spend exceeds amount.
   --service-budget <service=amount>   Warn when service spend exceeds amount. Repeatable.
   --growth-limit-percent <percent>    Warn when month-over-month growth exceeds percent.

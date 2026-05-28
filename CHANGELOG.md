@@ -9,6 +9,8 @@ semantic versioning after the first tagged release.
 
 ### Added
 
+- Report file output with `marvin analyze --output`.
+- Golden test coverage for Markdown reports.
 - Ignore-service rules for excluding services from reports and warnings.
 - JSON config loading for reusable warning rules.
 - Markdown and JSON report output for `marvin analyze`.

@@ -9,6 +9,7 @@ semantic versioning after the first tagged release.
 
 ### Added
 
+- Golden test coverage for terminal and JSON reports.
 - Cost Explorer CSV export documentation.
 - Sample CSV generation with `marvin sample`.
 - Support for additional AWS cost CSV column names and timestamp formats.

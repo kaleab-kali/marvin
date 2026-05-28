@@ -2,7 +2,6 @@ package report
 
 import (
 	"bytes"
-	"os"
 	"strings"
 	"testing"
 
@@ -33,21 +32,13 @@ func TestWriteMarkdown(t *testing.T) {
 }
 
 func TestWriteMarkdownMatchesGoldenFile(t *testing.T) {
-	records := []cost.Record{
-		{Service: "Amazon EC2", StartDate: mustDate(t, "2026-01-01"), Cost: 100},
-		{Service: "Amazon EC2", StartDate: mustDate(t, "2026-02-01"), Cost: 150},
-	}
-
 	var output bytes.Buffer
-	if err := WriteMarkdown(&output, records, cost.WarningRules{}); err != nil {
+	if err := WriteMarkdown(&output, sampleReportRecords(t), cost.WarningRules{}); err != nil {
 		t.Fatalf("expected markdown report to write, got %v", err)
 	}
 
-	want, err := os.ReadFile("testdata/sample.golden.md")
-	if err != nil {
-		t.Fatalf("read golden file: %v", err)
-	}
-	if got := output.String(); got != string(want) {
-		t.Fatalf("markdown output mismatch\nwant:\n%s\ngot:\n%s", string(want), got)
+	want := readGoldenFile(t, "testdata/sample.golden.md")
+	if got := output.String(); got != want {
+		t.Fatalf("markdown output mismatch\nwant:\n%s\ngot:\n%s", want, got)
 	}
 }

@@ -1,0 +1,29 @@
+{
+  "total_spend": 250,
+  "monthly_spend": [
+    {
+      "month": "2026-01",
+      "cost": 100
+    },
+    {
+      "month": "2026-02",
+      "cost": 150
+    }
+  ],
+  "month_over_month": [
+    {
+      "month": "2026-02",
+      "previous_month": "2026-01",
+      "cost": 150,
+      "previous_cost": 100,
+      "change": 50,
+      "change_percent": 50
+    }
+  ],
+  "service_spend": [
+    {
+      "service": "Amazon EC2",
+      "cost": 250
+    }
+  ]
+}

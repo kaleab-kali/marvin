@@ -46,3 +46,15 @@ func TestWriteJSONSummary(t *testing.T) {
 		t.Fatalf("expected total spend 100, got %f", decoded.TotalSpend)
 	}
 }
+
+func TestWriteJSONMatchesGoldenFile(t *testing.T) {
+	var output bytes.Buffer
+	if err := WriteJSON(&output, sampleReportRecords(t), cost.WarningRules{}); err != nil {
+		t.Fatalf("expected JSON report to write, got %v", err)
+	}
+
+	want := readGoldenFile(t, "testdata/sample.golden.json")
+	if got := output.String(); got != want {
+		t.Fatalf("json output mismatch\nwant:\n%s\ngot:\n%s", want, got)
+	}
+}

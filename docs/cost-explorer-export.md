@@ -90,7 +90,8 @@ marvin analyze --config examples/marvin.json --fail-on-warning path/to/cost-expl
 To validate a config file before using it:
 
 ```sh
-marvin config validate examples/marvin.json
+marvin config sample --output marvin.json
+marvin config validate marvin.json
 ```
 
 ## Handling Private Billing Data

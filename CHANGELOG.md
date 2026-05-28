@@ -9,6 +9,7 @@ semantic versioning after the first tagged release.
 
 ### Added
 
+- Config sample generation with `marvin config sample`.
 - Config validation with `marvin config validate`.
 - Release version injection for tagged CLI binaries.
 - Release build workflow for tagged CLI binaries.

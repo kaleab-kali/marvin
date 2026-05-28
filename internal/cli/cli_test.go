@@ -131,6 +131,52 @@ func TestConfigValidateAcceptsValidConfig(t *testing.T) {
 	}
 }
 
+func TestConfigSampleWritesJSON(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"config", "sample"}, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), `"total_budget": 300`) {
+		t.Fatalf("expected sample config JSON, got:\n%s", stdout.String())
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("expected empty stderr, got %q", stderr.String())
+	}
+}
+
+func TestConfigSampleWritesJSONToOutputFile(t *testing.T) {
+	outputPath := filepath.Join(t.TempDir(), "marvin.json")
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"config", "sample", "--output", outputPath}, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("expected empty stdout when output file is used, got %q", stdout.String())
+	}
+	content, err := os.ReadFile(outputPath)
+	if err != nil {
+		t.Fatalf("expected sample config file to be written: %v", err)
+	}
+	if !strings.Contains(string(content), `"service_budgets"`) {
+		t.Fatalf("expected sample config JSON in output file, got:\n%s", string(content))
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run([]string{"config", "validate", outputPath}, &stdout, &stderr)
+	if code != ExitOK {
+		t.Fatalf("expected generated sample config to validate, got %d with stderr %q", code, stderr.String())
+	}
+}
+
 func TestConfigValidateRejectsMissingPath(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer

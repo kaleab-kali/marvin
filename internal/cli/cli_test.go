@@ -18,7 +18,7 @@ func TestRunShowsHelpWithoutArgs(t *testing.T) {
 	if code != ExitOK {
 		t.Fatalf("expected exit code %d, got %d", ExitOK, code)
 	}
-	if !strings.Contains(stdout.String(), "marvin analyze [flags] <cost-explorer.csv>") {
+	if !strings.Contains(stdout.String(), "marvin analyze [flags] <cost-explorer.csv|->") {
 		t.Fatalf("expected usage in stdout, got %q", stdout.String())
 	}
 	if stderr.Len() != 0 {
@@ -165,6 +165,26 @@ func TestAnalyzeWritesTerminalReport(t *testing.T) {
 		if !strings.Contains(output, want) {
 			t.Fatalf("expected output to contain %q, got:\n%s", want, output)
 		}
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("expected empty stderr, got %q", stderr.String())
+	}
+}
+
+func TestAnalyzeReadsCostCSVFromStdin(t *testing.T) {
+	input := strings.NewReader(`Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := RunWithIO([]string{"analyze", "-"}, input, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "Total spend: $100.00") {
+		t.Fatalf("expected stdin CSV to be analyzed, got:\n%s", stdout.String())
 	}
 	if stderr.Len() != 0 {
 		t.Fatalf("expected empty stderr, got %q", stderr.String())

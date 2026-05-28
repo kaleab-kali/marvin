@@ -69,6 +69,12 @@ Run:
 marvin analyze path/to/cost-explorer.csv
 ```
 
+Marvin can also read a CSV from standard input:
+
+```sh
+cat path/to/cost-explorer.csv | marvin analyze -
+```
+
 To create a shareable Markdown report:
 
 ```sh

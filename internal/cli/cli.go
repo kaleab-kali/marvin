@@ -35,6 +35,10 @@ type analyzeOptions struct {
 }
 
 func Run(args []string, stdout, stderr io.Writer) int {
+	return RunWithIO(args, os.Stdin, stdout, stderr)
+}
+
+func RunWithIO(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	if len(args) == 0 {
 		printUsage(stdout)
 		return ExitOK
@@ -48,7 +52,7 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stdout, "marvin %s\n", Version)
 		return ExitOK
 	case "analyze":
-		return runAnalyze(args[1:], stdout, stderr)
+		return runAnalyze(args[1:], stdin, stdout, stderr)
 	case "sample":
 		return runSample(args[1:], stdout, stderr)
 	default:
@@ -58,7 +62,7 @@ func Run(args []string, stdout, stderr io.Writer) int {
 	}
 }
 
-func runAnalyze(args []string, stdout, stderr io.Writer) int {
+func runAnalyze(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	options, err := parseAnalyzeArgs(args)
 	if errors.Is(err, errAnalyzeHelp) {
 		printAnalyzeUsage(stdout)
@@ -69,14 +73,18 @@ func runAnalyze(args []string, stdout, stderr io.Writer) int {
 		return ExitUsageError
 	}
 
-	file, err := os.Open(options.path)
-	if err != nil {
-		fmt.Fprintf(stderr, "open cost CSV: %v\n", err)
-		return ExitRuntimeError
+	input := stdin
+	if options.path != "-" {
+		file, err := os.Open(options.path)
+		if err != nil {
+			fmt.Fprintf(stderr, "open cost CSV: %v\n", err)
+			return ExitRuntimeError
+		}
+		defer file.Close()
+		input = file
 	}
-	defer file.Close()
 
-	records, err := cost.ParseCostExplorerCSV(file)
+	records, err := cost.ParseCostExplorerCSV(input)
 	if err != nil {
 		fmt.Fprintf(stderr, "parse cost CSV: %v\n", err)
 		return ExitRuntimeError
@@ -244,6 +252,11 @@ func parseAnalyzeArgs(args []string) (analyzeOptions, error) {
 			if err := parseServiceBudget(options.rules.ServiceLimits, strings.TrimPrefix(arg, "--service-budget=")); err != nil {
 				return analyzeOptions{}, err
 			}
+		case arg == "-":
+			if options.path != "" {
+				return analyzeOptions{}, fmt.Errorf("unexpected extra argument %q", arg)
+			}
+			options.path = arg
 		case strings.HasPrefix(arg, "-"):
 			return analyzeOptions{}, fmt.Errorf("unknown analyze flag %q", arg)
 		default:
@@ -399,7 +412,7 @@ func printUsage(w io.Writer) {
 	fmt.Fprint(w, `Marvin reads exported AWS Cost Explorer CSV files and reports cost changes.
 
 Usage:
-  marvin analyze [flags] <cost-explorer.csv>
+  marvin analyze [flags] <cost-explorer.csv|->
   marvin sample [flags]
   marvin version
   marvin help
@@ -411,7 +424,7 @@ Status:
 
 func printAnalyzeUsage(w io.Writer) {
 	fmt.Fprint(w, `Usage:
-  marvin analyze [flags] <cost-explorer.csv>
+  marvin analyze [flags] <cost-explorer.csv|->
 
 Flags:
   --config <path>                       Load warning rules from a JSON config file.

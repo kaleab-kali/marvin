@@ -15,8 +15,8 @@ func TestRunShowsHelpWithoutArgs(t *testing.T) {
 
 	code := Run(nil, &stdout, &stderr)
 
-	if code != 0 {
-		t.Fatalf("expected exit code 0, got %d", code)
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d", ExitOK, code)
 	}
 	if !strings.Contains(stdout.String(), "marvin analyze [flags] <cost-explorer.csv>") {
 		t.Fatalf("expected usage in stdout, got %q", stdout.String())
@@ -32,8 +32,8 @@ func TestRunShowsVersion(t *testing.T) {
 
 	code := Run([]string{"version"}, &stdout, &stderr)
 
-	if code != 0 {
-		t.Fatalf("expected exit code 0, got %d", code)
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d", ExitOK, code)
 	}
 	if got, want := stdout.String(), "marvin "+Version+"\n"; got != want {
 		t.Fatalf("expected %q, got %q", want, got)
@@ -49,8 +49,8 @@ func TestRunRejectsUnknownCommand(t *testing.T) {
 
 	code := Run([]string{"nope"}, &stdout, &stderr)
 
-	if code != 2 {
-		t.Fatalf("expected exit code 2, got %d", code)
+	if code != ExitUsageError {
+		t.Fatalf("expected exit code %d, got %d", ExitUsageError, code)
 	}
 	if stdout.Len() != 0 {
 		t.Fatalf("expected empty stdout, got %q", stdout.String())
@@ -66,8 +66,8 @@ func TestAnalyzeRequiresPath(t *testing.T) {
 
 	code := Run([]string{"analyze"}, &stdout, &stderr)
 
-	if code != 2 {
-		t.Fatalf("expected exit code 2, got %d", code)
+	if code != ExitUsageError {
+		t.Fatalf("expected exit code %d, got %d", ExitUsageError, code)
 	}
 	if stdout.Len() != 0 {
 		t.Fatalf("expected empty stdout, got %q", stdout.String())
@@ -87,8 +87,8 @@ func TestAnalyzeWritesTerminalReport(t *testing.T) {
 
 	code := Run([]string{"analyze", "--total-budget=200", "--growth-limit-percent=20", "--service-budget", "Amazon EC2=200", csvPath}, &stdout, &stderr)
 
-	if code != 0 {
-		t.Fatalf("expected exit code 0, got %d with stderr %q", code, stderr.String())
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
 	}
 	output := stdout.String()
 	for _, want := range []string{
@@ -105,6 +105,43 @@ func TestAnalyzeWritesTerminalReport(t *testing.T) {
 	}
 	if stderr.Len() != 0 {
 		t.Fatalf("expected empty stderr, got %q", stderr.String())
+	}
+}
+
+func TestAnalyzeFailsOnWarningWhenRequested(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"analyze", "--fail-on-warning", "--total-budget=50", csvPath}, &stdout, &stderr)
+
+	if code != ExitWarning {
+		t.Fatalf("expected exit code %d, got %d", ExitWarning, code)
+	}
+	if !strings.Contains(stdout.String(), "total spend $100.00 exceeds budget $50.00") {
+		t.Fatalf("expected warning report, got:\n%s", stdout.String())
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("expected empty stderr, got %q", stderr.String())
+	}
+}
+
+func TestAnalyzeDoesNotFailOnWarningByDefault(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"analyze", "--total-budget=50", csvPath}, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d", ExitOK, code)
+	}
+	if !strings.Contains(stdout.String(), "total spend $100.00 exceeds budget $50.00") {
+		t.Fatalf("expected warning report, got:\n%s", stdout.String())
 	}
 }
 
@@ -125,8 +162,8 @@ func TestAnalyzeUsesConfigFile(t *testing.T) {
 
 	code := Run([]string{"analyze", "--config", configPath, csvPath}, &stdout, &stderr)
 
-	if code != 0 {
-		t.Fatalf("expected exit code 0, got %d with stderr %q", code, stderr.String())
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
 	}
 	output := stdout.String()
 	for _, want := range []string{
@@ -151,8 +188,8 @@ func TestAnalyzeIgnoresServicesFromConfig(t *testing.T) {
 
 	code := Run([]string{"analyze", "--config", configPath, csvPath}, &stdout, &stderr)
 
-	if code != 0 {
-		t.Fatalf("expected exit code 0, got %d with stderr %q", code, stderr.String())
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
 	}
 	output := stdout.String()
 	if !strings.Contains(output, "Total spend: $100.00") {
@@ -173,8 +210,8 @@ func TestAnalyzeIgnoresServicesFromFlag(t *testing.T) {
 
 	code := Run([]string{"analyze", "--ignore-service=Tax", csvPath}, &stdout, &stderr)
 
-	if code != 0 {
-		t.Fatalf("expected exit code 0, got %d with stderr %q", code, stderr.String())
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
 	}
 	if !strings.Contains(stdout.String(), "Total spend: $100.00") {
 		t.Fatalf("expected ignored tax to be excluded, got:\n%s", stdout.String())
@@ -191,8 +228,8 @@ func TestAnalyzeLetsFlagsOverrideEarlierConfig(t *testing.T) {
 
 	code := Run([]string{"analyze", "--config", configPath, "--total-budget=200", csvPath}, &stdout, &stderr)
 
-	if code != 0 {
-		t.Fatalf("expected exit code 0, got %d with stderr %q", code, stderr.String())
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
 	}
 	if strings.Contains(stdout.String(), "exceeds budget") {
 		t.Fatalf("expected later flag to override config budget, got:\n%s", stdout.String())
@@ -205,8 +242,8 @@ func TestAnalyzeRejectsInvalidBudgetFlag(t *testing.T) {
 
 	code := Run([]string{"analyze", "--total-budget=free", "cost.csv"}, &stdout, &stderr)
 
-	if code != 2 {
-		t.Fatalf("expected exit code 2, got %d", code)
+	if code != ExitUsageError {
+		t.Fatalf("expected exit code %d, got %d", ExitUsageError, code)
 	}
 	if stdout.Len() != 0 {
 		t.Fatalf("expected empty stdout, got %q", stdout.String())
@@ -225,8 +262,8 @@ func TestAnalyzeWritesMarkdownReport(t *testing.T) {
 
 	code := Run([]string{"analyze", "--format=markdown", csvPath}, &stdout, &stderr)
 
-	if code != 0 {
-		t.Fatalf("expected exit code 0, got %d with stderr %q", code, stderr.String())
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
 	}
 	output := stdout.String()
 	for _, want := range []string{
@@ -249,8 +286,8 @@ func TestAnalyzeWritesJSONReport(t *testing.T) {
 
 	code := Run([]string{"analyze", "--format", "json", csvPath}, &stdout, &stderr)
 
-	if code != 0 {
-		t.Fatalf("expected exit code 0, got %d with stderr %q", code, stderr.String())
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
 	}
 
 	var payload struct {
@@ -302,8 +339,8 @@ func TestAnalyzeRejectsEmptyOutputPath(t *testing.T) {
 
 	code := Run([]string{"analyze", "--output=", "cost.csv"}, &stdout, &stderr)
 
-	if code != 2 {
-		t.Fatalf("expected exit code 2, got %d", code)
+	if code != ExitUsageError {
+		t.Fatalf("expected exit code %d, got %d", ExitUsageError, code)
 	}
 	if !strings.Contains(stderr.String(), "--output requires a path") {
 		t.Fatalf("expected output path error, got %q", stderr.String())

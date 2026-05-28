@@ -88,12 +88,22 @@ Analyze flags:
 
 ```text
 --config <path>                         Load warning rules from a JSON config file.
+--fail-on-warning                       Exit with code 3 when warnings are present.
 --format <terminal|markdown|json>       Output format. Defaults to terminal.
 --ignore-service <service>              Exclude a service from totals and warnings. Repeatable.
 --output <path>                         Write the report to a file instead of stdout.
 --total-budget <amount>                 Warn when total spend exceeds amount.
 --service-budget <service=amount>       Warn when service spend exceeds amount. Repeatable.
 --growth-limit-percent <percent>        Warn when month-over-month growth exceeds percent.
+```
+
+Exit codes:
+
+```text
+0  Success.
+1  Runtime error, such as an unreadable CSV or unwritable output file.
+2  Usage error, such as an invalid flag.
+3  Warnings were present and --fail-on-warning was set.
 ```
 
 ## Example Output

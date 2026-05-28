@@ -29,3 +29,20 @@ func TestWriteJSON(t *testing.T) {
 		t.Fatalf("expected Amazon EC2 service spend, got %+v", summary.ServiceSpend)
 	}
 }
+
+func TestWriteJSONSummary(t *testing.T) {
+	summary := Summary{TotalSpend: 100}
+
+	var output bytes.Buffer
+	if err := WriteJSONSummary(&output, summary); err != nil {
+		t.Fatalf("expected JSON summary to write, got %v", err)
+	}
+
+	var decoded Summary
+	if err := json.Unmarshal(output.Bytes(), &decoded); err != nil {
+		t.Fatalf("expected valid JSON, got %v with output %q", err, output.String())
+	}
+	if decoded.TotalSpend != 100 {
+		t.Fatalf("expected total spend 100, got %f", decoded.TotalSpend)
+	}
+}

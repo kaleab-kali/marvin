@@ -9,6 +9,7 @@ semantic versioning after the first tagged release.
 
 ### Added
 
+- Cost Explorer CSV export documentation.
 - Sample CSV generation with `marvin sample`.
 - Support for additional AWS cost CSV column names and timestamp formats.
 - Stable analyze exit codes and `--fail-on-warning`.

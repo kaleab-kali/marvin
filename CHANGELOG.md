@@ -9,6 +9,7 @@ semantic versioning after the first tagged release.
 
 ### Added
 
+- Standard input support with `marvin analyze -`.
 - Golden test coverage for terminal and JSON reports.
 - Cost Explorer CSV export documentation.
 - Sample CSV generation with `marvin sample`.

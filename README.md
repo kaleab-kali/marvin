@@ -84,13 +84,19 @@ Write a report to a file:
 marvin analyze --format markdown --output report.md fixtures/sample-cost-explorer.csv
 ```
 
+Read a CSV from standard input:
+
+```sh
+cat fixtures/sample-cost-explorer.csv | marvin analyze -
+```
+
 For guidance on exporting compatible AWS data, see
 [`docs/cost-explorer-export.md`](docs/cost-explorer-export.md).
 
 ## CLI Usage
 
 ```text
-marvin analyze [flags] <cost-explorer.csv>
+marvin analyze [flags] <cost-explorer.csv|->
 marvin sample [flags]
 marvin version
 marvin help

@@ -77,6 +77,18 @@ func TestWriteTerminalSummary(t *testing.T) {
 	}
 }
 
+func TestWriteTerminalMatchesGoldenFile(t *testing.T) {
+	var output bytes.Buffer
+	if err := WriteTerminal(&output, sampleReportRecords(t), cost.WarningRules{}); err != nil {
+		t.Fatalf("expected terminal report to write, got %v", err)
+	}
+
+	want := readGoldenFile(t, "testdata/sample.golden.terminal")
+	if got := output.String(); got != want {
+		t.Fatalf("terminal output mismatch\nwant:\n%s\ngot:\n%s", want, got)
+	}
+}
+
 func mustDate(t *testing.T, value string) time.Time {
 	t.Helper()
 

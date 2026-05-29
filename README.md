@@ -149,6 +149,8 @@ cat fixtures/sample-cost-explorer.csv | marvin analyze -
 
 For guidance on exporting compatible AWS data, see
 [`docs/cost-explorer-export.md`](docs/cost-explorer-export.md).
+For common errors and fixes, see
+[`docs/troubleshooting.md`](docs/troubleshooting.md).
 
 ## CLI Usage
 

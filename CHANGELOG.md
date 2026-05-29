@@ -18,6 +18,7 @@ semantic versioning after the first tagged release.
 - Expanded GitHub issue and pull request templates for contributors.
 - Architecture documentation for contributors.
 - Troubleshooting guide for common CSV, config, and report issues.
+- Linux race-detector job in CI.
 - Configuration reference documentation.
 - Standard input support for `marvin config validate -`.
 - Gzip-compressed CSV input support.

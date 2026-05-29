@@ -99,6 +99,12 @@ To keep the service section short for large exports:
 marvin analyze --top-services=10 path/to/cost-explorer.csv
 ```
 
+To focus on one or more services:
+
+```sh
+marvin analyze --only-service "Amazon Elastic Compute Cloud - Compute" path/to/cost-explorer.csv
+```
+
 To analyze only a billing month range:
 
 ```sh

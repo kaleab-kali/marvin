@@ -23,3 +23,25 @@ func FilterIgnoredServices(records []Record, ignoredServices []string) []Record 
 	}
 	return filtered
 }
+
+func FilterIncludedServices(records []Record, includedServices []string) []Record {
+	included := make(map[string]bool)
+	for _, service := range includedServices {
+		service = strings.TrimSpace(service)
+		if service != "" {
+			included[service] = true
+		}
+	}
+	if len(included) == 0 {
+		return records
+	}
+
+	filtered := make([]Record, 0, len(records))
+	for _, record := range records {
+		if !included[record.Service] {
+			continue
+		}
+		filtered = append(filtered, record)
+	}
+	return filtered
+}

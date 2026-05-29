@@ -30,15 +30,16 @@ var errConfigHelp = errors.New("config help requested")
 var errSampleHelp = errors.New("sample help requested")
 
 type analyzeOptions struct {
-	paths           []string
-	format          string
-	outputPath      string
-	failOnWarning   bool
-	fromMonth       time.Time
-	ignoredServices []string
-	toMonth         time.Time
-	topServices     int
-	rules           cost.WarningRules
+	paths            []string
+	format           string
+	outputPath       string
+	failOnWarning    bool
+	fromMonth        time.Time
+	ignoredServices  []string
+	includedServices []string
+	toMonth          time.Time
+	topServices      int
+	rules            cost.WarningRules
 }
 
 func Run(args []string, stdout, stderr io.Writer) int {
@@ -87,6 +88,7 @@ func runAnalyze(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "%v\n", err)
 		return ExitRuntimeError
 	}
+	records = cost.FilterIncludedServices(records, options.includedServices)
 	records = cost.FilterIgnoredServices(records, options.ignoredServices)
 	records = filterRecordsByMonth(records, options.fromMonth, options.toMonth)
 	if len(records) == 0 {
@@ -438,6 +440,18 @@ func parseAnalyzeArgs(args []string) (analyzeOptions, error) {
 			if err := addIgnoredService(&options, strings.TrimPrefix(arg, "--ignore-service=")); err != nil {
 				return analyzeOptions{}, err
 			}
+		case arg == "--only-service":
+			value, ok := nextArg(args, &i)
+			if !ok {
+				return analyzeOptions{}, errors.New("--only-service requires a service name")
+			}
+			if err := addIncludedService(&options, value); err != nil {
+				return analyzeOptions{}, err
+			}
+		case strings.HasPrefix(arg, "--only-service="):
+			if err := addIncludedService(&options, strings.TrimPrefix(arg, "--only-service=")); err != nil {
+				return analyzeOptions{}, err
+			}
 		case arg == "--service-budget":
 			value, ok := nextArg(args, &i)
 			if !ok {
@@ -676,6 +690,15 @@ func addIgnoredService(options *analyzeOptions, value string) error {
 	return nil
 }
 
+func addIncludedService(options *analyzeOptions, value string) error {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return errors.New("--only-service requires a service name")
+	}
+	options.includedServices = append(options.includedServices, value)
+	return nil
+}
+
 func setReportFormat(options *analyzeOptions, value string) error {
 	value = strings.ToLower(strings.TrimSpace(value))
 	switch value {
@@ -781,6 +804,7 @@ Flags:
   --format <terminal|markdown|json>    Output format. Defaults to terminal.
   --from <YYYY-MM>                     Include records from this month onward.
   --ignore-service <service>           Exclude a service from totals and warnings. Repeatable.
+  --only-service <service>             Include only this service. Repeatable.
   --output <path>                       Write the report to a file instead of stdout.
   --to <YYYY-MM>                       Include records through this month.
   --total-budget <amount>             Warn when total spend exceeds amount.

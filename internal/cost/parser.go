@@ -111,6 +111,9 @@ func ParseCostExplorerCSV(r io.Reader) ([]Record, error) {
 		}
 		records = append(records, record)
 	}
+	if len(records) == 0 {
+		return nil, errors.New("cost CSV contains no data rows")
+	}
 
 	return records, nil
 }

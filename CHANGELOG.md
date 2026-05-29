@@ -14,6 +14,7 @@ semantic versioning after the first tagged release.
 - JSON Schema for `marvin.json` config files.
 - CSV report output with `marvin analyze --format csv`.
 - Minimum service spend report filtering with `marvin analyze --min-service-spend`.
+- `min_service_spend` config setting for reusable service spend report filters.
 - Configuration reference documentation.
 - Standard input support for `marvin config validate -`.
 - Gzip-compressed CSV input support.

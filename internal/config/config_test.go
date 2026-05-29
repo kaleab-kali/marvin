@@ -35,6 +35,7 @@ func TestLoadIncludesServiceFilters(t *testing.T) {
   "ignore_services": ["Tax", "Credits"],
   "include_services": ["Amazon EC2", "Amazon S3"],
   "from_month": "2026-01",
+  "min_service_spend": 10,
   "to_month": "2026-02",
   "top_services": 10
 }`)
@@ -57,6 +58,9 @@ func TestLoadIncludesServiceFilters(t *testing.T) {
 	}
 	assertMonth(t, "from month", settings.FromMonth, "2026-01")
 	assertMonth(t, "to month", settings.ToMonth, "2026-02")
+	if settings.MinServiceSpend != 10 {
+		t.Fatalf("expected min service spend 10, got %f", settings.MinServiceSpend)
+	}
 	if settings.TopServices != 10 {
 		t.Fatalf("expected top services 10, got %d", settings.TopServices)
 	}
@@ -99,6 +103,16 @@ func TestLoadRejectsNegativeTopServices(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "top_services must not be negative") {
 		t.Fatalf("expected negative top services error, got %v", err)
+	}
+}
+
+func TestLoadRejectsNegativeMinServiceSpend(t *testing.T) {
+	_, err := Load(strings.NewReader(`{"min_service_spend": -1}`))
+	if err == nil {
+		t.Fatal("expected negative min service spend error")
+	}
+	if !strings.Contains(err.Error(), "min_service_spend must not be negative") {
+		t.Fatalf("expected negative min service spend error, got %v", err)
 	}
 }
 

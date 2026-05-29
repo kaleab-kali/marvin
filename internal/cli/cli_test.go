@@ -624,6 +624,30 @@ func TestAnalyzeUsesTopServicesFromConfig(t *testing.T) {
 	}
 }
 
+func TestAnalyzeUsesMinServiceSpendFromConfig(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+2026-01-01,Amazon S3,25,USD
+2026-01-01,AWS Key Management Service,3,USD
+`)
+	configPath := writeTempFile(t, "marvin.json", `{"min_service_spend": 10}`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"analyze", "--config", configPath, csvPath}, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
+	}
+	output := stdout.String()
+	if !strings.Contains(output, "Total spend: $128.00") {
+		t.Fatalf("expected total spend to include hidden service cost, got:\n%s", output)
+	}
+	if strings.Contains(output, "AWS Key Management Service") {
+		t.Fatalf("expected service below threshold to be hidden, got:\n%s", output)
+	}
+}
+
 func TestAnalyzeUsesMonthRangeFromConfig(t *testing.T) {
 	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
 2026-01-01,Amazon EC2,100,USD

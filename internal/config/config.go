@@ -19,6 +19,7 @@ type warningRulesFile struct {
 	IgnoreServices     []string           `json:"ignore_services"`
 	IncludeServices    []string           `json:"include_services"`
 	FromMonth          string             `json:"from_month"`
+	MinServiceSpend    float64            `json:"min_service_spend"`
 	ToMonth            string             `json:"to_month"`
 	TopServices        int                `json:"top_services"`
 }
@@ -28,6 +29,7 @@ type Settings struct {
 	FromMonth       time.Time
 	IgnoreServices  []string
 	IncludeServices []string
+	MinServiceSpend float64
 	ToMonth         time.Time
 	TopServices     int
 }
@@ -54,6 +56,9 @@ func Load(r io.Reader) (Settings, error) {
 	if err := validateOptionalNonNegativeInt("top_services", file.TopServices); err != nil {
 		return Settings{}, err
 	}
+	if err := validatePositive("min_service_spend", file.MinServiceSpend); err != nil {
+		return Settings{}, err
+	}
 	fromMonth, err := parseOptionalMonth("from_month", file.FromMonth)
 	if err != nil {
 		return Settings{}, err
@@ -71,6 +76,7 @@ func Load(r io.Reader) (Settings, error) {
 		FromMonth:       fromMonth,
 		IgnoreServices:  ignored,
 		IncludeServices: included,
+		MinServiceSpend: file.MinServiceSpend,
 		ToMonth:         toMonth,
 		TopServices:     file.TopServices,
 	}, nil

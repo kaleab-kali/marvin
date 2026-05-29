@@ -26,6 +26,11 @@
       "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$",
       "description": "Include records from this month onward. Format: YYYY-MM."
     },
+    "min_service_spend": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Hide service rows below this spend amount. Zero means no threshold."
+    },
     "to_month": {
       "type": "string",
       "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$",

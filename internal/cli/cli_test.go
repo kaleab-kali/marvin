@@ -109,6 +109,7 @@ func TestSampleRejectsUnexpectedArgument(t *testing.T) {
 
 func TestConfigValidateAcceptsValidConfig(t *testing.T) {
 	configPath := writeTempFile(t, "marvin.json", `{
+  "$schema": "https://raw.githubusercontent.com/kaleab-kali/marvin/main/docs/marvin.schema.json",
   "total_budget": 200,
   "growth_limit_percent": 20,
   "service_budgets": {

@@ -25,6 +25,7 @@ All fields are optional.
 
 | Field | Type | Description |
 | --- | --- | --- |
+| `$schema` | string | Optional editor hint for JSON Schema validation. |
 | `total_budget` | number | Warn when total filtered spend exceeds this amount. |
 | `growth_limit_percent` | number | Warn when month-over-month growth exceeds this percentage. |
 | `service_budgets` | object | Map of service name to budget amount. |
@@ -35,11 +36,28 @@ All fields are optional.
 | `top_services` | number | Limit service rows in report output. |
 
 Unknown fields are rejected so typos do not silently change report behavior.
+The `$schema` field is the only metadata field Marvin accepts.
+
+## JSON Schema
+
+The config schema is published at
+[`docs/marvin.schema.json`](marvin.schema.json). Use this URL in `marvin.json`
+for editor validation:
+
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/kaleab-kali/marvin/main/docs/marvin.schema.json"
+}
+```
+
+Marvin also validates rules that JSON Schema cannot express, such as requiring
+`from_month` to be before or equal to `to_month`.
 
 ## Example
 
 ```json
 {
+  "$schema": "https://raw.githubusercontent.com/kaleab-kali/marvin/main/docs/marvin.schema.json",
   "total_budget": 300,
   "growth_limit_percent": 10,
   "from_month": "2026-01",

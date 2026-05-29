@@ -12,6 +12,7 @@ import (
 )
 
 type warningRulesFile struct {
+	Schema             string             `json:"$schema"`
 	TotalBudget        float64            `json:"total_budget"`
 	GrowthLimitPercent float64            `json:"growth_limit_percent"`
 	ServiceBudgets     map[string]float64 `json:"service_budgets"`

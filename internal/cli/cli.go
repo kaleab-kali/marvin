@@ -37,6 +37,7 @@ type analyzeOptions struct {
 	fromMonth        time.Time
 	ignoredServices  []string
 	includedServices []string
+	minServiceSpend  float64
 	toMonth          time.Time
 	topServices      int
 	rules            cost.WarningRules
@@ -100,6 +101,7 @@ func runAnalyze(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return ExitRuntimeError
 	}
 	summary := report.BuildSummary(records, options.rules)
+	summary = filterServiceSpend(summary, options.minServiceSpend)
 	summary = limitServiceSpend(summary, options.topServices)
 
 	output := stdout
@@ -354,6 +356,22 @@ func parseAnalyzeArgs(args []string) (analyzeOptions, error) {
 			if err := setReportFormat(&options, strings.TrimPrefix(arg, "--format=")); err != nil {
 				return analyzeOptions{}, err
 			}
+		case arg == "--min-service-spend":
+			value, ok := nextArg(args, &i)
+			if !ok {
+				return analyzeOptions{}, errors.New("--min-service-spend requires an amount")
+			}
+			amount, err := parsePositiveFloat("--min-service-spend", value)
+			if err != nil {
+				return analyzeOptions{}, err
+			}
+			options.minServiceSpend = amount
+		case strings.HasPrefix(arg, "--min-service-spend="):
+			amount, err := parsePositiveFloat("--min-service-spend", strings.TrimPrefix(arg, "--min-service-spend="))
+			if err != nil {
+				return analyzeOptions{}, err
+			}
+			options.minServiceSpend = amount
 		case arg == "--from":
 			value, ok := nextArg(args, &i)
 			if !ok {
@@ -617,6 +635,21 @@ func limitServiceSpend(summary report.Summary, topServices int) report.Summary {
 	return summary
 }
 
+func filterServiceSpend(summary report.Summary, minServiceSpend float64) report.Summary {
+	if minServiceSpend <= 0 {
+		return summary
+	}
+
+	services := make([]report.ServiceSpend, 0, len(summary.ServiceSpend))
+	for _, service := range summary.ServiceSpend {
+		if service.Cost >= minServiceSpend {
+			services = append(services, service)
+		}
+	}
+	summary.ServiceSpend = services
+	return summary
+}
+
 func filterRecordsByMonth(records []cost.Record, fromMonth, toMonth time.Time) []cost.Record {
 	if fromMonth.IsZero() && toMonth.IsZero() {
 		return records
@@ -810,6 +843,7 @@ Flags:
   --format <terminal|markdown|json|csv> Output format. Defaults to terminal.
   --from <YYYY-MM>                     Include records from this month onward.
   --ignore-service <service>           Exclude a service from totals and warnings. Repeatable.
+  --min-service-spend <amount>         Hide service rows below this spend amount.
   --only-service <service>             Include only this service. Repeatable.
   --output <path>                       Write the report to a file instead of stdout.
   --to <YYYY-MM>                       Include records through this month.

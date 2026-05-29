@@ -105,6 +105,13 @@ To keep the service section short for large exports:
 marvin analyze --top-services=10 path/to/cost-explorer.csv
 ```
 
+To hide very small service rows while keeping totals and warnings based on all
+included records:
+
+```sh
+marvin analyze --min-service-spend=10 path/to/cost-explorer.csv
+```
+
 To focus on one or more services:
 
 ```sh

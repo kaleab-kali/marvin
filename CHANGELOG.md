@@ -9,6 +9,7 @@ semantic versioning after the first tagged release.
 
 ### Added
 
+- Currency-aware report formatting and mixed-currency analysis validation.
 - Empty filtered-result detection for analysis filters.
 - `from_month` and `to_month` config settings for reusable month range filters.
 - Month range filtering with `marvin analyze --from` and `--to`.

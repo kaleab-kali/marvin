@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -89,6 +90,10 @@ func runAnalyze(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	records = filterRecordsByMonth(records, options.fromMonth, options.toMonth)
 	if len(records) == 0 {
 		fmt.Fprintln(stderr, "analyze produced no records after applying filters")
+		return ExitRuntimeError
+	}
+	if err := validateSingleCurrency(records); err != nil {
+		fmt.Fprintf(stderr, "%v\n", err)
 		return ExitRuntimeError
 	}
 	summary := report.BuildSummary(records, options.rules)
@@ -572,6 +577,31 @@ func filterRecordsByMonth(records []cost.Record, fromMonth, toMonth time.Time) [
 		filtered = append(filtered, record)
 	}
 	return filtered
+}
+
+func validateSingleCurrency(records []cost.Record) error {
+	currencies := make(map[string]bool)
+	for _, record := range records {
+		currencies[normalizeCurrency(record.Currency)] = true
+	}
+	if len(currencies) <= 1 {
+		return nil
+	}
+
+	values := make([]string, 0, len(currencies))
+	for currency := range currencies {
+		values = append(values, currency)
+	}
+	sort.Strings(values)
+	return fmt.Errorf("multiple currencies found after filters: %s", strings.Join(values, ", "))
+}
+
+func normalizeCurrency(value string) string {
+	value = strings.ToUpper(strings.TrimSpace(value))
+	if value == "" {
+		return "USD"
+	}
+	return value
 }
 
 func loadConfig(options *analyzeOptions, path string) error {

@@ -16,12 +16,12 @@ func WriteTerminalSummary(w io.Writer, summary Summary) error {
 	tabbed := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
 
 	fmt.Fprintln(tabbed, "Marvin Cost Report")
-	fmt.Fprintf(tabbed, "Total spend: %s\n\n", formatMoney(summary.TotalSpend))
+	fmt.Fprintf(tabbed, "Total spend: %s\n\n", formatMoney(summary.TotalSpend, summary.Currency))
 
 	fmt.Fprintln(tabbed, "Monthly spend")
 	fmt.Fprintln(tabbed, "Month\tCost")
 	for _, month := range summary.MonthlySpend {
-		fmt.Fprintf(tabbed, "%s\t%s\n", month.Month, formatMoney(month.Cost))
+		fmt.Fprintf(tabbed, "%s\t%s\n", month.Month, formatMoney(month.Cost, summary.Currency))
 	}
 
 	if len(summary.MonthOverMonth) > 0 {
@@ -33,9 +33,9 @@ func WriteTerminalSummary(w io.Writer, summary Summary) error {
 				tabbed,
 				"%s\t%s\t%s\t%s\t%s\n",
 				comparison.Month,
-				formatMoney(comparison.PreviousCost),
-				formatMoney(comparison.Cost),
-				formatSignedMoney(comparison.Change),
+				formatMoney(comparison.PreviousCost, summary.Currency),
+				formatMoney(comparison.Cost, summary.Currency),
+				formatSignedMoney(comparison.Change, summary.Currency),
 				formatPercent(comparison.ChangePercent),
 			)
 		}
@@ -45,7 +45,7 @@ func WriteTerminalSummary(w io.Writer, summary Summary) error {
 	fmt.Fprintln(tabbed, "Service spend")
 	fmt.Fprintln(tabbed, "Service\tCost")
 	for _, service := range summary.ServiceSpend {
-		fmt.Fprintf(tabbed, "%s\t%s\n", service.Service, formatMoney(service.Cost))
+		fmt.Fprintf(tabbed, "%s\t%s\n", service.Service, formatMoney(service.Cost, summary.Currency))
 	}
 
 	fmt.Fprintln(tabbed)
@@ -54,38 +54,47 @@ func WriteTerminalSummary(w io.Writer, summary Summary) error {
 		fmt.Fprintln(tabbed, "None")
 	} else {
 		for _, warning := range summary.Warnings {
-			fmt.Fprintf(tabbed, "- %s\n", formatWarning(warning))
+			fmt.Fprintf(tabbed, "- %s\n", formatWarning(warning, summary.Currency))
 		}
 	}
 
 	return tabbed.Flush()
 }
 
-func formatWarning(warning Warning) string {
+func formatWarning(warning Warning, currency string) string {
 	switch warning.Type {
 	case string(cost.WarningTotalBudget):
-		return fmt.Sprintf("total spend %s exceeds budget %s", formatMoney(warning.Actual), formatMoney(warning.Limit))
+		return fmt.Sprintf("total spend %s exceeds budget %s", formatMoney(warning.Actual, currency), formatMoney(warning.Limit, currency))
 	case string(cost.WarningServiceBudget):
-		return fmt.Sprintf("%s spend %s exceeds budget %s", warning.Service, formatMoney(warning.Actual), formatMoney(warning.Limit))
+		return fmt.Sprintf("%s spend %s exceeds budget %s", warning.Service, formatMoney(warning.Actual, currency), formatMoney(warning.Limit, currency))
 	case string(cost.WarningGrowth):
-		return fmt.Sprintf("%s spend grew %s from %s to %s", warning.Month, formatPercent(warning.ChangePercent), formatMoney(warning.Previous), formatMoney(warning.Actual))
+		return fmt.Sprintf("%s spend grew %s from %s to %s", warning.Month, formatPercent(warning.ChangePercent), formatMoney(warning.Previous, currency), formatMoney(warning.Actual, currency))
 	default:
 		return "unknown warning"
 	}
 }
 
-func formatMoney(value float64) string {
+func formatMoney(value float64, currency string) string {
+	if currency != "" && currency != "USD" {
+		return fmt.Sprintf("%s %.2f", currency, value)
+	}
 	return fmt.Sprintf("$%.2f", value)
 }
 
-func formatSignedMoney(value float64) string {
+func formatSignedMoney(value float64, currency string) string {
 	if value > 0 {
+		if currency != "" && currency != "USD" {
+			return fmt.Sprintf("+%s %.2f", currency, value)
+		}
 		return fmt.Sprintf("+$%.2f", value)
 	}
 	if value < 0 {
+		if currency != "" && currency != "USD" {
+			return fmt.Sprintf("-%s %.2f", currency, -value)
+		}
 		return fmt.Sprintf("-$%.2f", -value)
 	}
-	return "$0.00"
+	return formatMoney(0, currency)
 }
 
 func formatPercent(value float64) string {

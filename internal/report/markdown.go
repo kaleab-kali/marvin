@@ -15,7 +15,7 @@ func WriteMarkdownSummary(w io.Writer, summary Summary) error {
 	if _, err := fmt.Fprintln(w, "# Marvin Cost Report"); err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintf(w, "\nTotal spend: **%s**\n", formatMoney(summary.TotalSpend)); err != nil {
+	if _, err := fmt.Fprintf(w, "\nTotal spend: **%s**\n", formatMoney(summary.TotalSpend, summary.Currency)); err != nil {
 		return err
 	}
 
@@ -29,7 +29,7 @@ func WriteMarkdownSummary(w io.Writer, summary Summary) error {
 		return err
 	}
 	for _, month := range summary.MonthlySpend {
-		if _, err := fmt.Fprintf(w, "| %s | %s |\n", month.Month, formatMoney(month.Cost)); err != nil {
+		if _, err := fmt.Fprintf(w, "| %s | %s |\n", month.Month, formatMoney(month.Cost, summary.Currency)); err != nil {
 			return err
 		}
 	}
@@ -45,7 +45,7 @@ func WriteMarkdownSummary(w io.Writer, summary Summary) error {
 			return err
 		}
 		for _, comparison := range summary.MonthOverMonth {
-			if _, err := fmt.Fprintf(w, "| %s | %s | %s | %s | %s |\n", comparison.Month, formatMoney(comparison.PreviousCost), formatMoney(comparison.Cost), formatSignedMoney(comparison.Change), formatPercent(comparison.ChangePercent)); err != nil {
+			if _, err := fmt.Fprintf(w, "| %s | %s | %s | %s | %s |\n", comparison.Month, formatMoney(comparison.PreviousCost, summary.Currency), formatMoney(comparison.Cost, summary.Currency), formatSignedMoney(comparison.Change, summary.Currency), formatPercent(comparison.ChangePercent)); err != nil {
 				return err
 			}
 		}
@@ -61,7 +61,7 @@ func WriteMarkdownSummary(w io.Writer, summary Summary) error {
 		return err
 	}
 	for _, service := range summary.ServiceSpend {
-		if _, err := fmt.Fprintf(w, "| %s | %s |\n", service.Service, formatMoney(service.Cost)); err != nil {
+		if _, err := fmt.Fprintf(w, "| %s | %s |\n", service.Service, formatMoney(service.Cost, summary.Currency)); err != nil {
 			return err
 		}
 	}
@@ -74,7 +74,7 @@ func WriteMarkdownSummary(w io.Writer, summary Summary) error {
 		return err
 	}
 	for _, warning := range summary.Warnings {
-		if _, err := fmt.Fprintf(w, "- %s\n", formatWarning(warning)); err != nil {
+		if _, err := fmt.Fprintf(w, "- %s\n", formatWarning(warning, summary.Currency)); err != nil {
 			return err
 		}
 	}

@@ -132,6 +132,24 @@ func TestConfigValidateAcceptsValidConfig(t *testing.T) {
 	}
 }
 
+func TestConfigValidateAcceptsConfigFromStdin(t *testing.T) {
+	input := strings.NewReader(`{"total_budget": 200}`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := RunWithIO([]string{"config", "validate", "-"}, input, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "config - is valid") {
+		t.Fatalf("expected valid stdin config message, got %q", stdout.String())
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("expected empty stderr, got %q", stderr.String())
+	}
+}
+
 func TestConfigSampleWritesJSON(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer

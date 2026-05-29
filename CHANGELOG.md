@@ -9,6 +9,7 @@ semantic versioning after the first tagged release.
 
 ### Added
 
+- Standard input support for `marvin config validate -`.
 - Gzip-compressed CSV input support.
 - Currency-aware report formatting and mixed-currency analysis validation.
 - Empty filtered-result detection for analysis filters.

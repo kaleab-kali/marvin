@@ -61,7 +61,7 @@ func RunWithIO(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	case "analyze":
 		return runAnalyze(args[1:], stdin, stdout, stderr)
 	case "config":
-		return runConfigCommand(args[1:], stdout, stderr)
+		return runConfigCommand(args[1:], stdin, stdout, stderr)
 	case "sample":
 		return runSample(args[1:], stdout, stderr)
 	default:
@@ -183,7 +183,7 @@ func (closer joinedCloser) Close() error {
 	return closeErr
 }
 
-func runConfigCommand(args []string, stdout, stderr io.Writer) int {
+func runConfigCommand(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	if len(args) == 0 {
 		printConfigUsage(stdout)
 		return ExitOK
@@ -196,7 +196,7 @@ func runConfigCommand(args []string, stdout, stderr io.Writer) int {
 	case "sample":
 		return runConfigSample(args[1:], stdout, stderr)
 	case "validate":
-		return runConfigValidate(args[1:], stdout, stderr)
+		return runConfigValidate(args[1:], stdin, stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "unknown config command %q\n\n", args[0])
 		printConfigUsage(stderr)
@@ -235,7 +235,7 @@ func runConfigSample(args []string, stdout, stderr io.Writer) int {
 	return ExitOK
 }
 
-func runConfigValidate(args []string, stdout, stderr io.Writer) int {
+func runConfigValidate(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	path, err := parseConfigValidateArgs(args)
 	if errors.Is(err, errConfigHelp) {
 		printConfigValidateUsage(stdout)
@@ -246,14 +246,18 @@ func runConfigValidate(args []string, stdout, stderr io.Writer) int {
 		return ExitUsageError
 	}
 
-	file, err := os.Open(path)
-	if err != nil {
-		fmt.Fprintf(stderr, "open config: %v\n", err)
-		return ExitRuntimeError
+	input := stdin
+	if path != "-" {
+		file, err := os.Open(path)
+		if err != nil {
+			fmt.Fprintf(stderr, "open config: %v\n", err)
+			return ExitRuntimeError
+		}
+		defer file.Close()
+		input = file
 	}
-	defer file.Close()
 
-	if _, err := config.Load(file); err != nil {
+	if _, err := config.Load(input); err != nil {
 		fmt.Fprintf(stderr, "validate config: %v\n", err)
 		return ExitRuntimeError
 	}
@@ -507,6 +511,11 @@ func parseConfigValidateArgs(args []string) (string, error) {
 		switch {
 		case arg == "-h" || arg == "--help":
 			return "", errConfigHelp
+		case arg == "-":
+			if path != "" {
+				return "", fmt.Errorf("unexpected extra argument %q", arg)
+			}
+			path = arg
 		case strings.HasPrefix(arg, "-"):
 			return "", fmt.Errorf("unknown config validate flag %q", arg)
 		default:
@@ -752,7 +761,7 @@ func printUsage(w io.Writer) {
 Usage:
   marvin analyze [flags] <cost-explorer.csv|-> [more.csv ...]
   marvin config sample [flags]
-  marvin config validate <marvin.json>
+  marvin config validate <marvin.json|->
   marvin sample [flags]
   marvin version
   marvin help
@@ -784,7 +793,7 @@ Flags:
 func printConfigUsage(w io.Writer) {
 	fmt.Fprint(w, `Usage:
   marvin config sample [flags]
-  marvin config validate <marvin.json>
+  marvin config validate <marvin.json|->
   marvin config help
 `)
 }
@@ -800,7 +809,7 @@ Flags:
 
 func printConfigValidateUsage(w io.Writer) {
 	fmt.Fprint(w, `Usage:
-  marvin config validate <marvin.json>
+  marvin config validate <marvin.json|->
 `)
 }
 

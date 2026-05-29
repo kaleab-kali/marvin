@@ -107,9 +107,9 @@ Or load warning thresholds from JSON:
 marvin analyze --config examples/marvin.json fixtures/sample-cost-explorer.csv
 ```
 
-Config files can also set reusable report options such as `include_services`,
-`ignore_services`, `from_month`, `min_service_spend`, `to_month`, and
-`top_services`.
+Config files can also set reusable report options such as `format`,
+`include_services`, `ignore_services`, `from_month`, `min_service_spend`,
+`to_month`, and `top_services`.
 
 For the full config reference and JSON Schema, see
 [`docs/configuration.md`](docs/configuration.md).

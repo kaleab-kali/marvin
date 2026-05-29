@@ -27,6 +27,7 @@ All fields are optional.
 | --- | --- | --- |
 | `$schema` | string | Optional editor hint for JSON Schema validation. |
 | `total_budget` | number | Warn when total filtered spend exceeds this amount. |
+| `format` | string | Report output format: `terminal`, `markdown`, `json`, or `csv`. Aliases: `text`, `md`. |
 | `growth_limit_percent` | number | Warn when month-over-month growth exceeds this percentage. |
 | `service_budgets` | object | Map of service name to budget amount. |
 | `include_services` | array of strings | Services to include in totals, warnings, and report output. |
@@ -60,6 +61,7 @@ Marvin also validates rules that JSON Schema cannot express, such as requiring
 {
   "$schema": "https://raw.githubusercontent.com/kaleab-kali/marvin/main/docs/marvin.schema.json",
   "total_budget": 300,
+  "format": "terminal",
   "growth_limit_percent": 10,
   "from_month": "2026-01",
   "min_service_spend": 10,

@@ -14,6 +14,7 @@ import (
 type warningRulesFile struct {
 	Schema             string             `json:"$schema"`
 	TotalBudget        float64            `json:"total_budget"`
+	Format             string             `json:"format"`
 	GrowthLimitPercent float64            `json:"growth_limit_percent"`
 	ServiceBudgets     map[string]float64 `json:"service_budgets"`
 	IgnoreServices     []string           `json:"ignore_services"`
@@ -26,6 +27,7 @@ type warningRulesFile struct {
 
 type Settings struct {
 	Rules           cost.WarningRules
+	Format          string
 	FromMonth       time.Time
 	IgnoreServices  []string
 	IncludeServices []string
@@ -59,6 +61,10 @@ func Load(r io.Reader) (Settings, error) {
 	if err := validatePositive("min_service_spend", file.MinServiceSpend); err != nil {
 		return Settings{}, err
 	}
+	format, err := reportFormatFromFile(file.Format)
+	if err != nil {
+		return Settings{}, err
+	}
 	fromMonth, err := parseOptionalMonth("from_month", file.FromMonth)
 	if err != nil {
 		return Settings{}, err
@@ -73,6 +79,7 @@ func Load(r io.Reader) (Settings, error) {
 
 	return Settings{
 		Rules:           rules,
+		Format:          format,
 		FromMonth:       fromMonth,
 		IgnoreServices:  ignored,
 		IncludeServices: included,
@@ -143,6 +150,22 @@ func serviceNamesFromFile(field string, values []string) ([]string, error) {
 		services = append(services, value)
 	}
 	return services, nil
+}
+
+func reportFormatFromFile(value string) (string, error) {
+	value = strings.ToLower(strings.TrimSpace(value))
+	switch value {
+	case "":
+		return "", nil
+	case "terminal", "text":
+		return "terminal", nil
+	case "markdown", "md":
+		return "markdown", nil
+	case "json", "csv":
+		return value, nil
+	default:
+		return "", fmt.Errorf("unsupported format value %q, expected terminal, markdown, md, json, csv, or text", value)
+	}
 }
 
 func validatePositive(name string, value float64) error {

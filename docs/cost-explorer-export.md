@@ -119,6 +119,8 @@ marvin config validate marvin.json
 marvin config sample | marvin config validate -
 ```
 
+See `docs/configuration.md` for the full config schema.
+
 ## Handling Private Billing Data
 
 Do not commit real billing exports to the repository. Cost exports can include

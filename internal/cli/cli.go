@@ -87,6 +87,10 @@ func runAnalyze(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	}
 	records = cost.FilterIgnoredServices(records, options.ignoredServices)
 	records = filterRecordsByMonth(records, options.fromMonth, options.toMonth)
+	if len(records) == 0 {
+		fmt.Fprintln(stderr, "analyze produced no records after applying filters")
+		return ExitRuntimeError
+	}
 	summary := report.BuildSummary(records, options.rules)
 	summary = limitServiceSpend(summary, options.topServices)
 

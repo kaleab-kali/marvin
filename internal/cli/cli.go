@@ -32,6 +32,7 @@ type analyzeOptions struct {
 	outputPath      string
 	failOnWarning   bool
 	ignoredServices []string
+	topServices     int
 	rules           cost.WarningRules
 }
 
@@ -83,6 +84,7 @@ func runAnalyze(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	}
 	records = cost.FilterIgnoredServices(records, options.ignoredServices)
 	summary := report.BuildSummary(records, options.rules)
+	summary = limitServiceSpend(summary, options.topServices)
 
 	output := stdout
 	var outputFile *os.File
@@ -315,6 +317,22 @@ func parseAnalyzeArgs(args []string) (analyzeOptions, error) {
 			if err := setOutputPath(&options, strings.TrimPrefix(arg, "--output=")); err != nil {
 				return analyzeOptions{}, err
 			}
+		case arg == "--top-services":
+			value, ok := nextArg(args, &i)
+			if !ok {
+				return analyzeOptions{}, errors.New("--top-services requires a count")
+			}
+			count, err := parsePositiveInt("--top-services", value)
+			if err != nil {
+				return analyzeOptions{}, err
+			}
+			options.topServices = count
+		case strings.HasPrefix(arg, "--top-services="):
+			count, err := parsePositiveInt("--top-services", strings.TrimPrefix(arg, "--top-services="))
+			if err != nil {
+				return analyzeOptions{}, err
+			}
+			options.topServices = count
 		case arg == "--config":
 			value, ok := nextArg(args, &i)
 			if !ok {
@@ -486,6 +504,14 @@ func sampleOutputPath(value string) (string, error) {
 	return value, nil
 }
 
+func limitServiceSpend(summary report.Summary, topServices int) report.Summary {
+	if topServices <= 0 || topServices >= len(summary.ServiceSpend) {
+		return summary
+	}
+	summary.ServiceSpend = summary.ServiceSpend[:topServices]
+	return summary
+}
+
 func loadConfig(options *analyzeOptions, path string) error {
 	file, err := os.Open(path)
 	if err != nil {
@@ -573,6 +599,17 @@ func parsePositiveFloat(name, value string) (float64, error) {
 	return amount, nil
 }
 
+func parsePositiveInt(name, value string) (int, error) {
+	amount, err := strconv.Atoi(strings.TrimSpace(value))
+	if err != nil {
+		return 0, fmt.Errorf("invalid %s value %q", name, value)
+	}
+	if amount <= 0 {
+		return 0, fmt.Errorf("%s must be greater than zero", name)
+	}
+	return amount, nil
+}
+
 func printUsage(w io.Writer) {
 	fmt.Fprint(w, `Marvin reads exported AWS Cost Explorer CSV files and reports cost changes.
 
@@ -600,6 +637,7 @@ Flags:
   --ignore-service <service>           Exclude a service from totals and warnings. Repeatable.
   --output <path>                       Write the report to a file instead of stdout.
   --total-budget <amount>             Warn when total spend exceeds amount.
+  --top-services <count>              Limit service rows in the report.
   --service-budget <service=amount>   Warn when service spend exceeds amount. Repeatable.
   --growth-limit-percent <percent>    Warn when month-over-month growth exceeds percent.
 `)

@@ -304,6 +304,49 @@ func TestAnalyzeCombinesMultipleCostCSVs(t *testing.T) {
 	}
 }
 
+func TestAnalyzeLimitsServiceRows(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+2026-01-01,Amazon S3,25,USD
+2026-01-01,AWS Lambda,5,USD
+`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"analyze", "--top-services=2", csvPath}, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
+	}
+	output := stdout.String()
+	for _, want := range []string{
+		"Total spend: $130.00",
+		"Amazon EC2",
+		"Amazon S3",
+	} {
+		if !strings.Contains(output, want) {
+			t.Fatalf("expected output to contain %q, got:\n%s", want, output)
+		}
+	}
+	if strings.Contains(output, "AWS Lambda") {
+		t.Fatalf("expected AWS Lambda to be hidden by --top-services, got:\n%s", output)
+	}
+}
+
+func TestAnalyzeRejectsInvalidTopServices(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"analyze", "--top-services=0", "cost.csv"}, &stdout, &stderr)
+
+	if code != ExitUsageError {
+		t.Fatalf("expected exit code %d, got %d", ExitUsageError, code)
+	}
+	if !strings.Contains(stderr.String(), "--top-services must be greater than zero") {
+		t.Fatalf("expected invalid top services error, got %q", stderr.String())
+	}
+}
+
 func TestAnalyzeReadsCostCSVFromStdin(t *testing.T) {
 	input := strings.NewReader(`Start Date,Service,Unblended Cost,Currency
 2026-01-01,Amazon EC2,100,USD

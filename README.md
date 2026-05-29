@@ -237,6 +237,8 @@ from the start. Contributions should stay focused on the local CSV workflow
 until the first release is complete.
 
 See `CONTRIBUTING.md` for local setup and pull request expectations.
+For package boundaries and data flow, see
+[`docs/architecture.md`](docs/architecture.md).
 
 ## Releases
 

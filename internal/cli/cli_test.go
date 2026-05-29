@@ -516,6 +516,29 @@ func TestAnalyzeUsesTopServicesFromConfig(t *testing.T) {
 	}
 }
 
+func TestAnalyzeUsesMonthRangeFromConfig(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+2026-02-01,Amazon EC2,150,USD
+`)
+	configPath := writeTempFile(t, "marvin.json", `{"from_month": "2026-02", "to_month": "2026-02"}`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"analyze", "--config", configPath, csvPath}, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
+	}
+	output := stdout.String()
+	if !strings.Contains(output, "Total spend: $150.00") {
+		t.Fatalf("expected filtered total from config month range, got:\n%s", output)
+	}
+	if strings.Contains(output, "2026-01") {
+		t.Fatalf("expected January to be hidden by config month range, got:\n%s", output)
+	}
+}
+
 func TestAnalyzeIgnoresServicesFromConfig(t *testing.T) {
 	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
 2026-01-01,Amazon EC2,100,USD

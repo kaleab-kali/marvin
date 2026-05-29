@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/kaleab-kali/marvin/internal/cost"
 )
@@ -15,12 +16,16 @@ type warningRulesFile struct {
 	GrowthLimitPercent float64            `json:"growth_limit_percent"`
 	ServiceBudgets     map[string]float64 `json:"service_budgets"`
 	IgnoreServices     []string           `json:"ignore_services"`
+	FromMonth          string             `json:"from_month"`
+	ToMonth            string             `json:"to_month"`
 	TopServices        int                `json:"top_services"`
 }
 
 type Settings struct {
 	Rules          cost.WarningRules
+	FromMonth      time.Time
 	IgnoreServices []string
+	ToMonth        time.Time
 	TopServices    int
 }
 
@@ -42,8 +47,19 @@ func Load(r io.Reader) (Settings, error) {
 	if err := validateOptionalNonNegativeInt("top_services", file.TopServices); err != nil {
 		return Settings{}, err
 	}
+	fromMonth, err := parseOptionalMonth("from_month", file.FromMonth)
+	if err != nil {
+		return Settings{}, err
+	}
+	toMonth, err := parseOptionalMonth("to_month", file.ToMonth)
+	if err != nil {
+		return Settings{}, err
+	}
+	if !fromMonth.IsZero() && !toMonth.IsZero() && fromMonth.After(toMonth) {
+		return Settings{}, errors.New("from_month must be before or equal to to_month")
+	}
 
-	return Settings{Rules: rules, IgnoreServices: ignored, TopServices: file.TopServices}, nil
+	return Settings{Rules: rules, FromMonth: fromMonth, IgnoreServices: ignored, ToMonth: toMonth, TopServices: file.TopServices}, nil
 }
 
 func LoadWarningRules(r io.Reader) (cost.WarningRules, error) {
@@ -121,4 +137,16 @@ func validateOptionalNonNegativeInt(name string, value int) error {
 		return fmt.Errorf("%s must not be negative", name)
 	}
 	return nil
+}
+
+func parseOptionalMonth(name, value string) (time.Time, error) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return time.Time{}, nil
+	}
+	parsed, err := time.Parse("2006-01", value)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("invalid %s value %q, expected YYYY-MM", name, value)
+	}
+	return time.Date(parsed.Year(), parsed.Month(), 1, 0, 0, 0, 0, time.UTC), nil
 }

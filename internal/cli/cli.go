@@ -27,7 +27,7 @@ var errConfigHelp = errors.New("config help requested")
 var errSampleHelp = errors.New("sample help requested")
 
 type analyzeOptions struct {
-	path            string
+	paths           []string
 	format          string
 	outputPath      string
 	failOnWarning   bool
@@ -76,20 +76,9 @@ func runAnalyze(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return ExitUsageError
 	}
 
-	input := stdin
-	if options.path != "-" {
-		file, err := os.Open(options.path)
-		if err != nil {
-			fmt.Fprintf(stderr, "open cost CSV: %v\n", err)
-			return ExitRuntimeError
-		}
-		defer file.Close()
-		input = file
-	}
-
-	records, err := cost.ParseCostExplorerCSV(input)
+	records, err := readCostRecords(options.paths, stdin)
 	if err != nil {
-		fmt.Fprintf(stderr, "parse cost CSV: %v\n", err)
+		fmt.Fprintf(stderr, "%v\n", err)
 		return ExitRuntimeError
 	}
 	records = cost.FilterIgnoredServices(records, options.ignoredServices)
@@ -117,6 +106,34 @@ func runAnalyze(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	}
 
 	return ExitOK
+}
+
+func readCostRecords(paths []string, stdin io.Reader) ([]cost.Record, error) {
+	var records []cost.Record
+	for _, path := range paths {
+		input := stdin
+		var file *os.File
+		if path != "-" {
+			var err error
+			file, err = os.Open(path)
+			if err != nil {
+				return nil, fmt.Errorf("open cost CSV %q: %w", path, err)
+			}
+			input = file
+		}
+
+		parsed, err := cost.ParseCostExplorerCSV(input)
+		if file != nil {
+			if closeErr := file.Close(); err == nil && closeErr != nil {
+				err = closeErr
+			}
+		}
+		if err != nil {
+			return nil, fmt.Errorf("parse cost CSV %q: %w", path, err)
+		}
+		records = append(records, parsed...)
+	}
+	return records, nil
 }
 
 func runConfigCommand(args []string, stdout, stderr io.Writer) int {
@@ -335,21 +352,18 @@ func parseAnalyzeArgs(args []string) (analyzeOptions, error) {
 				return analyzeOptions{}, err
 			}
 		case arg == "-":
-			if options.path != "" {
-				return analyzeOptions{}, fmt.Errorf("unexpected extra argument %q", arg)
+			if containsString(options.paths, "-") {
+				return analyzeOptions{}, errors.New("analyze accepts standard input only once")
 			}
-			options.path = arg
+			options.paths = append(options.paths, arg)
 		case strings.HasPrefix(arg, "-"):
 			return analyzeOptions{}, fmt.Errorf("unknown analyze flag %q", arg)
 		default:
-			if options.path != "" {
-				return analyzeOptions{}, fmt.Errorf("unexpected extra argument %q", arg)
-			}
-			options.path = arg
+			options.paths = append(options.paths, arg)
 		}
 	}
 
-	if options.path == "" {
+	if len(options.paths) == 0 {
 		return analyzeOptions{}, errors.New("analyze requires a Cost Explorer CSV path")
 	}
 
@@ -517,6 +531,15 @@ func setReportFormat(options *analyzeOptions, value string) error {
 	}
 }
 
+func containsString(values []string, want string) bool {
+	for _, value := range values {
+		if value == want {
+			return true
+		}
+	}
+	return false
+}
+
 func nextArg(args []string, index *int) (string, bool) {
 	if *index+1 >= len(args) {
 		return "", false
@@ -554,7 +577,7 @@ func printUsage(w io.Writer) {
 	fmt.Fprint(w, `Marvin reads exported AWS Cost Explorer CSV files and reports cost changes.
 
 Usage:
-  marvin analyze [flags] <cost-explorer.csv|->
+  marvin analyze [flags] <cost-explorer.csv|-> [more.csv ...]
   marvin config sample [flags]
   marvin config validate <marvin.json>
   marvin sample [flags]
@@ -568,7 +591,7 @@ Status:
 
 func printAnalyzeUsage(w io.Writer) {
 	fmt.Fprint(w, `Usage:
-  marvin analyze [flags] <cost-explorer.csv|->
+  marvin analyze [flags] <cost-explorer.csv|-> [more.csv ...]
 
 Flags:
   --config <path>                       Load warning rules from a JSON config file.

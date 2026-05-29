@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/kaleab-kali/marvin/internal/config"
 	"github.com/kaleab-kali/marvin/internal/cost"
@@ -31,7 +32,9 @@ type analyzeOptions struct {
 	format          string
 	outputPath      string
 	failOnWarning   bool
+	fromMonth       time.Time
 	ignoredServices []string
+	toMonth         time.Time
 	topServices     int
 	rules           cost.WarningRules
 }
@@ -83,6 +86,7 @@ func runAnalyze(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return ExitRuntimeError
 	}
 	records = cost.FilterIgnoredServices(records, options.ignoredServices)
+	records = filterRecordsByMonth(records, options.fromMonth, options.toMonth)
 	summary := report.BuildSummary(records, options.rules)
 	summary = limitServiceSpend(summary, options.topServices)
 
@@ -303,6 +307,22 @@ func parseAnalyzeArgs(args []string) (analyzeOptions, error) {
 			if err := setReportFormat(&options, strings.TrimPrefix(arg, "--format=")); err != nil {
 				return analyzeOptions{}, err
 			}
+		case arg == "--from":
+			value, ok := nextArg(args, &i)
+			if !ok {
+				return analyzeOptions{}, errors.New("--from requires a month")
+			}
+			month, err := parseMonthFlag("--from", value)
+			if err != nil {
+				return analyzeOptions{}, err
+			}
+			options.fromMonth = month
+		case strings.HasPrefix(arg, "--from="):
+			month, err := parseMonthFlag("--from", strings.TrimPrefix(arg, "--from="))
+			if err != nil {
+				return analyzeOptions{}, err
+			}
+			options.fromMonth = month
 		case arg == "--fail-on-warning":
 			options.failOnWarning = true
 		case arg == "--output":
@@ -333,6 +353,22 @@ func parseAnalyzeArgs(args []string) (analyzeOptions, error) {
 				return analyzeOptions{}, err
 			}
 			options.topServices = count
+		case arg == "--to":
+			value, ok := nextArg(args, &i)
+			if !ok {
+				return analyzeOptions{}, errors.New("--to requires a month")
+			}
+			month, err := parseMonthFlag("--to", value)
+			if err != nil {
+				return analyzeOptions{}, err
+			}
+			options.toMonth = month
+		case strings.HasPrefix(arg, "--to="):
+			month, err := parseMonthFlag("--to", strings.TrimPrefix(arg, "--to="))
+			if err != nil {
+				return analyzeOptions{}, err
+			}
+			options.toMonth = month
 		case arg == "--config":
 			value, ok := nextArg(args, &i)
 			if !ok {
@@ -383,6 +419,9 @@ func parseAnalyzeArgs(args []string) (analyzeOptions, error) {
 
 	if len(options.paths) == 0 {
 		return analyzeOptions{}, errors.New("analyze requires a Cost Explorer CSV path")
+	}
+	if !options.fromMonth.IsZero() && !options.toMonth.IsZero() && options.fromMonth.After(options.toMonth) {
+		return analyzeOptions{}, errors.New("--from must be before or equal to --to")
 	}
 
 	return options, nil
@@ -512,6 +551,25 @@ func limitServiceSpend(summary report.Summary, topServices int) report.Summary {
 	return summary
 }
 
+func filterRecordsByMonth(records []cost.Record, fromMonth, toMonth time.Time) []cost.Record {
+	if fromMonth.IsZero() && toMonth.IsZero() {
+		return records
+	}
+
+	filtered := make([]cost.Record, 0, len(records))
+	for _, record := range records {
+		month := cost.Month(record.StartDate)
+		if !fromMonth.IsZero() && month.Before(fromMonth) {
+			continue
+		}
+		if !toMonth.IsZero() && month.After(toMonth) {
+			continue
+		}
+		filtered = append(filtered, record)
+	}
+	return filtered
+}
+
 func loadConfig(options *analyzeOptions, path string) error {
 	file, err := os.Open(path)
 	if err != nil {
@@ -600,6 +658,15 @@ func parsePositiveFloat(name, value string) (float64, error) {
 	return amount, nil
 }
 
+func parseMonthFlag(name, value string) (time.Time, error) {
+	value = strings.TrimSpace(value)
+	parsed, err := time.Parse("2006-01", value)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("invalid %s value %q, expected YYYY-MM", name, value)
+	}
+	return time.Date(parsed.Year(), parsed.Month(), 1, 0, 0, 0, 0, time.UTC), nil
+}
+
 func parsePositiveInt(name, value string) (int, error) {
 	amount, err := strconv.Atoi(strings.TrimSpace(value))
 	if err != nil {
@@ -635,8 +702,10 @@ Flags:
   --config <path>                       Load warning rules from a JSON config file.
   --fail-on-warning                     Exit with code 3 when warnings are present.
   --format <terminal|markdown|json>    Output format. Defaults to terminal.
+  --from <YYYY-MM>                     Include records from this month onward.
   --ignore-service <service>           Exclude a service from totals and warnings. Repeatable.
   --output <path>                       Write the report to a file instead of stdout.
+  --to <YYYY-MM>                       Include records through this month.
   --total-budget <amount>             Warn when total spend exceeds amount.
   --top-services <count>              Limit service rows in the report.
   --service-budget <service=amount>   Warn when service spend exceeds amount. Repeatable.

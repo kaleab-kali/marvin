@@ -74,6 +74,12 @@ Limit the service table for large exports:
 marvin analyze --top-services=10 fixtures/sample-cost-explorer.csv
 ```
 
+Analyze a month range:
+
+```sh
+marvin analyze --from=2026-01 --to=2026-02 fixtures/sample-cost-explorer.csv
+```
+
 Or load warning thresholds from JSON:
 
 ```sh
@@ -133,8 +139,10 @@ Analyze flags:
 --config <path>                         Load warning rules from a JSON config file.
 --fail-on-warning                       Exit with code 3 when warnings are present.
 --format <terminal|markdown|json>       Output format. Defaults to terminal. Aliases: text, md.
+--from <YYYY-MM>                        Include records from this month onward.
 --ignore-service <service>              Exclude a service from totals and warnings. Repeatable.
 --output <path>                         Write the report to a file instead of stdout.
+--to <YYYY-MM>                          Include records through this month.
 --total-budget <amount>                 Warn when total spend exceeds amount.
 --top-services <count>                  Limit service rows in the report.
 --service-budget <service=amount>       Warn when service spend exceeds amount. Repeatable.

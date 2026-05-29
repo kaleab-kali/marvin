@@ -93,6 +93,12 @@ To keep the service section short for large exports:
 marvin analyze --top-services=10 path/to/cost-explorer.csv
 ```
 
+To analyze only a billing month range:
+
+```sh
+marvin analyze --from=2026-01 --to=2026-02 path/to/cost-explorer.csv
+```
+
 To fail automation when configured warning rules trigger:
 
 ```sh

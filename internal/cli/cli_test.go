@@ -333,6 +333,43 @@ func TestAnalyzeLimitsServiceRows(t *testing.T) {
 	}
 }
 
+func TestAnalyzeFiltersMonthRange(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+2026-02-01,Amazon EC2,150,USD
+2026-03-01,Amazon EC2,200,USD
+`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"analyze", "--from=2026-02", "--to", "2026-02", csvPath}, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
+	}
+	output := stdout.String()
+	if !strings.Contains(output, "Total spend: $150.00") {
+		t.Fatalf("expected filtered total, got:\n%s", output)
+	}
+	if strings.Contains(output, "2026-01") || strings.Contains(output, "2026-03") {
+		t.Fatalf("expected report to include only 2026-02, got:\n%s", output)
+	}
+}
+
+func TestAnalyzeRejectsInvalidMonthRange(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"analyze", "--from=2026-03", "--to=2026-02", "cost.csv"}, &stdout, &stderr)
+
+	if code != ExitUsageError {
+		t.Fatalf("expected exit code %d, got %d", ExitUsageError, code)
+	}
+	if !strings.Contains(stderr.String(), "--from must be before or equal to --to") {
+		t.Fatalf("expected invalid month range error, got %q", stderr.String())
+	}
+}
+
 func TestAnalyzeRejectsInvalidTopServices(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer

@@ -79,7 +79,9 @@ Choose an output format:
 
 ```sh
 marvin analyze --format terminal fixtures/sample-cost-explorer.csv
+marvin analyze --format text fixtures/sample-cost-explorer.csv
 marvin analyze --format markdown fixtures/sample-cost-explorer.csv
+marvin analyze --format md fixtures/sample-cost-explorer.csv
 marvin analyze --format json fixtures/sample-cost-explorer.csv
 ```
 
@@ -116,7 +118,7 @@ Analyze flags:
 ```text
 --config <path>                         Load warning rules from a JSON config file.
 --fail-on-warning                       Exit with code 3 when warnings are present.
---format <terminal|markdown|json>       Output format. Defaults to terminal.
+--format <terminal|markdown|json>       Output format. Defaults to terminal. Aliases: text, md.
 --ignore-service <service>              Exclude a service from totals and warnings. Repeatable.
 --output <path>                         Write the report to a file instead of stdout.
 --total-budget <amount>                 Warn when total spend exceeds amount.

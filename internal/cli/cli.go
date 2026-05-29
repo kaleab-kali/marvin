@@ -503,11 +503,17 @@ func addIgnoredService(options *analyzeOptions, value string) error {
 func setReportFormat(options *analyzeOptions, value string) error {
 	value = strings.ToLower(strings.TrimSpace(value))
 	switch value {
-	case "terminal", "markdown", "json":
-		options.format = value
+	case "terminal", "text":
+		options.format = "terminal"
+		return nil
+	case "markdown", "md":
+		options.format = "markdown"
+		return nil
+	case "json":
+		options.format = "json"
 		return nil
 	default:
-		return fmt.Errorf("unsupported --format %q, expected terminal, markdown, or json", value)
+		return fmt.Errorf("unsupported --format %q, expected terminal, markdown, md, json, or text", value)
 	}
 }
 

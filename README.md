@@ -83,6 +83,12 @@ Limit the service table for large exports:
 marvin analyze --top-services=10 fixtures/sample-cost-explorer.csv
 ```
 
+Focus on selected services:
+
+```sh
+marvin analyze --only-service "Amazon Elastic Compute Cloud - Compute" fixtures/sample-cost-explorer.csv
+```
+
 Analyze a month range:
 
 ```sh
@@ -154,6 +160,7 @@ Analyze flags:
 --format <terminal|markdown|json>       Output format. Defaults to terminal. Aliases: text, md.
 --from <YYYY-MM>                        Include records from this month onward.
 --ignore-service <service>              Exclude a service from totals and warnings. Repeatable.
+--only-service <service>                Include only this service. Repeatable.
 --output <path>                         Write the report to a file instead of stdout.
 --to <YYYY-MM>                          Include records through this month.
 --total-budget <amount>                 Warn when total spend exceeds amount.

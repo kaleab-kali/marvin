@@ -657,6 +657,29 @@ func TestAnalyzeIgnoresServicesFromFlag(t *testing.T) {
 	}
 }
 
+func TestAnalyzeIncludesOnlyRequestedServicesFromFlag(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+2026-01-01,Amazon S3,25,USD
+2026-01-01,Tax,20,USD
+`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"analyze", "--only-service=Amazon EC2", "--only-service", "Amazon S3", csvPath}, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
+	}
+	output := stdout.String()
+	if !strings.Contains(output, "Total spend: $125.00") {
+		t.Fatalf("expected included service total, got:\n%s", output)
+	}
+	if strings.Contains(output, "Tax") {
+		t.Fatalf("expected Tax to be excluded from report, got:\n%s", output)
+	}
+}
+
 func TestAnalyzeLetsFlagsOverrideEarlierConfig(t *testing.T) {
 	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
 2026-01-01,Amazon EC2,100,USD

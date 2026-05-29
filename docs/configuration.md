@@ -32,6 +32,7 @@ All fields are optional.
 | `include_services` | array of strings | Services to include in totals, warnings, and report output. |
 | `ignore_services` | array of strings | Services to exclude from totals, warnings, and report output. |
 | `from_month` | string | Include records from this month onward. Format: `YYYY-MM`. |
+| `min_service_spend` | number | Hide service rows below this spend amount. Totals and warnings still use all filtered records. |
 | `to_month` | string | Include records through this month. Format: `YYYY-MM`. |
 | `top_services` | number | Limit service rows in report output. |
 
@@ -61,6 +62,7 @@ Marvin also validates rules that JSON Schema cannot express, such as requiring
   "total_budget": 300,
   "growth_limit_percent": 10,
   "from_month": "2026-01",
+  "min_service_spend": 10,
   "to_month": "2026-02",
   "top_services": 10,
   "include_services": [

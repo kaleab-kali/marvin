@@ -1,5 +1,6 @@
 {
   "total_spend": 250,
+  "currency": "USD",
   "monthly_spend": [
     {
       "month": "2026-01",

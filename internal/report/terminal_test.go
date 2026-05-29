@@ -61,6 +61,20 @@ func TestWriteTerminalShowsNoWarnings(t *testing.T) {
 	}
 }
 
+func TestWriteTerminalUsesRecordCurrency(t *testing.T) {
+	records := []cost.Record{
+		{Service: "Amazon S3", StartDate: mustDate(t, "2026-01-01"), Cost: 100, Currency: "GBP"},
+	}
+
+	var output bytes.Buffer
+	if err := WriteTerminal(&output, records, cost.WarningRules{}); err != nil {
+		t.Fatalf("expected terminal report to write, got %v", err)
+	}
+	if !strings.Contains(output.String(), "Total spend: GBP 100.00") {
+		t.Fatalf("expected GBP amount, got:\n%s", output.String())
+	}
+}
+
 func TestWriteTerminalSummary(t *testing.T) {
 	summary := Summary{
 		TotalSpend:   100,

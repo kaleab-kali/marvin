@@ -41,6 +41,9 @@ Marvin is not intended to replace AWS Cost Explorer. It is a small local tool fo
 turning exported data into repeatable reports that are easy to review in a
 terminal, pull request, or incident notes.
 
+Reports use the currency code from the CSV export. Mixed-currency inputs are
+rejected so totals are not accidentally combined across currencies.
+
 ## Quickstart
 
 Run the sample report:

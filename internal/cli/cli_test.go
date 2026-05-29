@@ -376,6 +376,27 @@ func TestAnalyzeRejectsEmptyFilteredResult(t *testing.T) {
 	}
 }
 
+func TestAnalyzeRejectsMixedCurrencies(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+2026-01-01,Amazon S3,100,GBP
+`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"analyze", csvPath}, &stdout, &stderr)
+
+	if code != ExitRuntimeError {
+		t.Fatalf("expected exit code %d, got %d", ExitRuntimeError, code)
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("expected empty stdout, got %q", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), "multiple currencies found after filters: GBP, USD") {
+		t.Fatalf("expected mixed currency error, got %q", stderr.String())
+	}
+}
+
 func TestAnalyzeRejectsInvalidMonthRange(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer

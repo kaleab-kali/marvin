@@ -2,12 +2,14 @@ package report
 
 import (
 	"math"
+	"strings"
 
 	"github.com/kaleab-kali/marvin/internal/cost"
 )
 
 type Summary struct {
 	TotalSpend     float64           `json:"total_spend"`
+	Currency       string            `json:"currency"`
 	MonthlySpend   []MonthSpend      `json:"monthly_spend"`
 	MonthOverMonth []MonthComparison `json:"month_over_month,omitempty"`
 	ServiceSpend   []ServiceSpend    `json:"service_spend"`
@@ -53,6 +55,7 @@ func BuildSummary(records []cost.Record, rules cost.WarningRules) Summary {
 
 	return Summary{
 		TotalSpend:     round(total, 2),
+		Currency:       summarizeCurrency(records),
 		MonthlySpend:   summarizeMonths(months),
 		MonthOverMonth: summarizeComparisons(comparisons),
 		ServiceSpend:   summarizeServices(services),
@@ -95,6 +98,18 @@ func summarizeServices(services []cost.ServiceTotal) []ServiceSpend {
 		})
 	}
 	return summary
+}
+
+func summarizeCurrency(records []cost.Record) string {
+	currency := "USD"
+	for _, record := range records {
+		value := strings.ToUpper(strings.TrimSpace(record.Currency))
+		if value != "" {
+			currency = value
+			break
+		}
+	}
+	return currency
 }
 
 func summarizeWarnings(warnings []cost.Warning) []Warning {

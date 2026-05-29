@@ -116,6 +116,7 @@ To validate a config file before using it:
 ```sh
 marvin config sample --output marvin.json
 marvin config validate marvin.json
+marvin config sample | marvin config validate -
 ```
 
 ## Handling Private Billing Data

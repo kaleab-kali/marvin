@@ -93,6 +93,12 @@ To create a shareable Markdown report:
 marvin analyze --format markdown --output cost-report.md path/to/cost-explorer.csv
 ```
 
+Use CSV output when you want to move the summary into a spreadsheet:
+
+```sh
+marvin analyze --format csv --output cost-report.csv path/to/cost-explorer.csv
+```
+
 To keep the service section short for large exports:
 
 ```sh

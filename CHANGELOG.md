@@ -12,6 +12,7 @@ semantic versioning after the first tagged release.
 - Include-service filtering with `marvin analyze --only-service`.
 - `include_services` config setting for reusable service include filters.
 - JSON Schema for `marvin.json` config files.
+- CSV report output with `marvin analyze --format csv`.
 - Configuration reference documentation.
 - Standard input support for `marvin config validate -`.
 - Gzip-compressed CSV input support.

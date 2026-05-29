@@ -345,7 +345,7 @@ func parseAnalyzeArgs(args []string) (analyzeOptions, error) {
 		case arg == "--format":
 			value, ok := nextArg(args, &i)
 			if !ok {
-				return analyzeOptions{}, errors.New("--format requires terminal, markdown, or json")
+				return analyzeOptions{}, errors.New("--format requires terminal, markdown, json, or csv")
 			}
 			if err := setReportFormat(&options, value); err != nil {
 				return analyzeOptions{}, err
@@ -585,6 +585,8 @@ func writeReport(stdout io.Writer, summary report.Summary, options analyzeOption
 		return report.WriteMarkdownSummary(stdout, summary)
 	case "json":
 		return report.WriteJSONSummary(stdout, summary)
+	case "csv":
+		return report.WriteCSVSummary(stdout, summary)
 	default:
 		return fmt.Errorf("unsupported report format %q", options.format)
 	}
@@ -712,8 +714,11 @@ func setReportFormat(options *analyzeOptions, value string) error {
 	case "json":
 		options.format = "json"
 		return nil
+	case "csv":
+		options.format = "csv"
+		return nil
 	default:
-		return fmt.Errorf("unsupported --format %q, expected terminal, markdown, md, json, or text", value)
+		return fmt.Errorf("unsupported --format %q, expected terminal, markdown, md, json, csv, or text", value)
 	}
 }
 
@@ -802,7 +807,7 @@ func printAnalyzeUsage(w io.Writer) {
 Flags:
   --config <path>                       Load warning rules from a JSON config file.
   --fail-on-warning                     Exit with code 3 when warnings are present.
-  --format <terminal|markdown|json>    Output format. Defaults to terminal.
+  --format <terminal|markdown|json|csv> Output format. Defaults to terminal.
   --from <YYYY-MM>                     Include records from this month onward.
   --ignore-service <service>           Exclude a service from totals and warnings. Repeatable.
   --only-service <service>             Include only this service. Repeatable.

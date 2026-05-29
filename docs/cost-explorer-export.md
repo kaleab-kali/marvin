@@ -87,6 +87,12 @@ To create a shareable Markdown report:
 marvin analyze --format markdown --output cost-report.md path/to/cost-explorer.csv
 ```
 
+To keep the service section short for large exports:
+
+```sh
+marvin analyze --top-services=10 path/to/cost-explorer.csv
+```
+
 To fail automation when configured warning rules trigger:
 
 ```sh

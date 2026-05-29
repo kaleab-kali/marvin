@@ -68,6 +68,12 @@ Run with warning thresholds:
 marvin analyze --total-budget=300 --growth-limit-percent=10 --service-budget "Amazon Elastic Compute Cloud - Compute=200" fixtures/sample-cost-explorer.csv
 ```
 
+Limit the service table for large exports:
+
+```sh
+marvin analyze --top-services=10 fixtures/sample-cost-explorer.csv
+```
+
 Or load warning thresholds from JSON:
 
 ```sh
@@ -128,6 +134,7 @@ Analyze flags:
 --ignore-service <service>              Exclude a service from totals and warnings. Repeatable.
 --output <path>                         Write the report to a file instead of stdout.
 --total-budget <amount>                 Warn when total spend exceeds amount.
+--top-services <count>                  Limit service rows in the report.
 --service-budget <service=amount>       Warn when service spend exceeds amount. Repeatable.
 --growth-limit-percent <percent>        Warn when month-over-month growth exceeds percent.
 ```

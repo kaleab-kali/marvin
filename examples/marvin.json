@@ -4,6 +4,10 @@
   "from_month": "2026-01",
   "to_month": "2026-02",
   "top_services": 10,
+  "include_services": [
+    "Amazon Elastic Compute Cloud - Compute",
+    "Amazon Simple Storage Service"
+  ],
   "ignore_services": [
     "Tax",
     "Credits"

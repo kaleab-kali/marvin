@@ -10,6 +10,7 @@ semantic versioning after the first tagged release.
 ### Added
 
 - Include-service filtering with `marvin analyze --only-service`.
+- `include_services` config setting for reusable service include filters.
 - Configuration reference documentation.
 - Standard input support for `marvin config validate -`.
 - Gzip-compressed CSV input support.

@@ -28,6 +28,7 @@ All fields are optional.
 | `total_budget` | number | Warn when total filtered spend exceeds this amount. |
 | `growth_limit_percent` | number | Warn when month-over-month growth exceeds this percentage. |
 | `service_budgets` | object | Map of service name to budget amount. |
+| `include_services` | array of strings | Services to include in totals, warnings, and report output. |
 | `ignore_services` | array of strings | Services to exclude from totals, warnings, and report output. |
 | `from_month` | string | Include records from this month onward. Format: `YYYY-MM`. |
 | `to_month` | string | Include records through this month. Format: `YYYY-MM`. |
@@ -44,6 +45,10 @@ Unknown fields are rejected so typos do not silently change report behavior.
   "from_month": "2026-01",
   "to_month": "2026-02",
   "top_services": 10,
+  "include_services": [
+    "Amazon Elastic Compute Cloud - Compute",
+    "Amazon Simple Storage Service"
+  ],
   "ignore_services": [
     "Tax",
     "Credits"

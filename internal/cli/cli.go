@@ -673,6 +673,7 @@ func loadConfig(options *analyzeOptions, path string) error {
 	options.rules = settings.Rules
 	options.fromMonth = settings.FromMonth
 	options.ignoredServices = settings.IgnoreServices
+	options.includedServices = settings.IncludeServices
 	options.toMonth = settings.ToMonth
 	options.topServices = settings.TopServices
 	if options.rules.ServiceLimits == nil {
@@ -863,6 +864,10 @@ const sampleConfigJSON = `{
   "service_budgets": {
     "Amazon Elastic Compute Cloud - Compute": 200
   },
+  "include_services": [
+    "Amazon Elastic Compute Cloud - Compute",
+    "Amazon Simple Storage Service"
+  ],
   "ignore_services": [
     "Tax"
   ]

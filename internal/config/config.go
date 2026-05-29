@@ -16,17 +16,19 @@ type warningRulesFile struct {
 	GrowthLimitPercent float64            `json:"growth_limit_percent"`
 	ServiceBudgets     map[string]float64 `json:"service_budgets"`
 	IgnoreServices     []string           `json:"ignore_services"`
+	IncludeServices    []string           `json:"include_services"`
 	FromMonth          string             `json:"from_month"`
 	ToMonth            string             `json:"to_month"`
 	TopServices        int                `json:"top_services"`
 }
 
 type Settings struct {
-	Rules          cost.WarningRules
-	FromMonth      time.Time
-	IgnoreServices []string
-	ToMonth        time.Time
-	TopServices    int
+	Rules           cost.WarningRules
+	FromMonth       time.Time
+	IgnoreServices  []string
+	IncludeServices []string
+	ToMonth         time.Time
+	TopServices     int
 }
 
 func Load(r io.Reader) (Settings, error) {
@@ -39,7 +41,11 @@ func Load(r io.Reader) (Settings, error) {
 	if err != nil {
 		return Settings{}, err
 	}
-	ignored, err := ignoredServicesFromFile(file.IgnoreServices)
+	ignored, err := serviceNamesFromFile("ignore_services", file.IgnoreServices)
+	if err != nil {
+		return Settings{}, err
+	}
+	included, err := serviceNamesFromFile("include_services", file.IncludeServices)
 	if err != nil {
 		return Settings{}, err
 	}
@@ -59,7 +65,14 @@ func Load(r io.Reader) (Settings, error) {
 		return Settings{}, errors.New("from_month must be before or equal to to_month")
 	}
 
-	return Settings{Rules: rules, FromMonth: fromMonth, IgnoreServices: ignored, ToMonth: toMonth, TopServices: file.TopServices}, nil
+	return Settings{
+		Rules:           rules,
+		FromMonth:       fromMonth,
+		IgnoreServices:  ignored,
+		IncludeServices: included,
+		ToMonth:         toMonth,
+		TopServices:     file.TopServices,
+	}, nil
 }
 
 func LoadWarningRules(r io.Reader) (cost.WarningRules, error) {
@@ -113,16 +126,16 @@ func rulesFromFile(file warningRulesFile) (cost.WarningRules, error) {
 	return rules, nil
 }
 
-func ignoredServicesFromFile(values []string) ([]string, error) {
-	ignored := make([]string, 0, len(values))
+func serviceNamesFromFile(field string, values []string) ([]string, error) {
+	services := make([]string, 0, len(values))
 	for _, value := range values {
 		value = strings.TrimSpace(value)
 		if value == "" {
-			return nil, errors.New("ignore_services contains an empty service name")
+			return nil, fmt.Errorf("%s contains an empty service name", field)
 		}
-		ignored = append(ignored, value)
+		services = append(services, value)
 	}
-	return ignored, nil
+	return services, nil
 }
 
 func validatePositive(name string, value float64) error {

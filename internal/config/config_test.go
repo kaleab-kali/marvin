@@ -30,9 +30,10 @@ func TestLoadWarningRules(t *testing.T) {
 	}
 }
 
-func TestLoadIncludesIgnoredServices(t *testing.T) {
+func TestLoadIncludesServiceFilters(t *testing.T) {
 	input := strings.NewReader(`{
   "ignore_services": ["Tax", "Credits"],
+  "include_services": ["Amazon EC2", "Amazon S3"],
   "from_month": "2026-01",
   "to_month": "2026-02",
   "top_services": 10
@@ -47,6 +48,12 @@ func TestLoadIncludesIgnoredServices(t *testing.T) {
 	}
 	if settings.IgnoreServices[0] != "Tax" || settings.IgnoreServices[1] != "Credits" {
 		t.Fatalf("unexpected ignored services: %+v", settings.IgnoreServices)
+	}
+	if len(settings.IncludeServices) != 2 {
+		t.Fatalf("expected 2 included services, got %d", len(settings.IncludeServices))
+	}
+	if settings.IncludeServices[0] != "Amazon EC2" || settings.IncludeServices[1] != "Amazon S3" {
+		t.Fatalf("unexpected included services: %+v", settings.IncludeServices)
 	}
 	assertMonth(t, "from month", settings.FromMonth, "2026-01")
 	assertMonth(t, "to month", settings.ToMonth, "2026-02")
@@ -72,6 +79,16 @@ func TestLoadWarningRulesRejectsNegativeValues(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "growth_limit_percent must not be negative") {
 		t.Fatalf("expected negative value error, got %v", err)
+	}
+}
+
+func TestLoadRejectsEmptyIncludeService(t *testing.T) {
+	_, err := Load(strings.NewReader(`{"include_services": ["Amazon EC2", " "]}`))
+	if err == nil {
+		t.Fatal("expected empty include service error")
+	}
+	if !strings.Contains(err.Error(), "include_services contains an empty service name") {
+		t.Fatalf("expected empty include service error, got %v", err)
 	}
 }
 

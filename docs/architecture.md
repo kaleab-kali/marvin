@@ -27,8 +27,8 @@ The `analyze` command follows this flow:
 1. Parse CLI flags and optional config files.
 2. Read one or more CSV inputs from files, gzip files, or standard input.
 3. Parse records with `internal/cost.ParseCostExplorerCSV`.
-4. Apply record filters such as included services, ignored services, and month
-   ranges.
+4. Apply record filters such as currency, included services, ignored services,
+   and month ranges.
 5. Validate that at least one record remains and that all remaining records use
    a single currency.
 6. Build a `report.Summary` from totals, service spend, monthly spend,

@@ -99,6 +99,13 @@ Use CSV output when you want to move the summary into a spreadsheet:
 marvin analyze --format csv --output cost-report.csv path/to/cost-explorer.csv
 ```
 
+If an export contains multiple currencies, filter to one currency before
+reporting:
+
+```sh
+marvin analyze --currency=USD path/to/cost-explorer.csv
+```
+
 To keep the service section short for large exports:
 
 ```sh

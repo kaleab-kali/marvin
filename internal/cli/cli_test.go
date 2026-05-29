@@ -464,6 +464,28 @@ func TestAnalyzeRejectsMixedCurrencies(t *testing.T) {
 	}
 }
 
+func TestAnalyzeFiltersCurrencyFromFlag(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+2026-01-01,Amazon S3,25,GBP
+`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"analyze", "--currency=gbp", csvPath}, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
+	}
+	output := stdout.String()
+	if !strings.Contains(output, "Total spend: GBP 25.00") {
+		t.Fatalf("expected GBP filtered total, got:\n%s", output)
+	}
+	if strings.Contains(output, "Amazon EC2") {
+		t.Fatalf("expected USD service to be excluded, got:\n%s", output)
+	}
+}
+
 func TestAnalyzeRejectsInvalidMonthRange(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
@@ -475,6 +497,20 @@ func TestAnalyzeRejectsInvalidMonthRange(t *testing.T) {
 	}
 	if !strings.Contains(stderr.String(), "--from must be before or equal to --to") {
 		t.Fatalf("expected invalid month range error, got %q", stderr.String())
+	}
+}
+
+func TestAnalyzeRejectsInvalidCurrency(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"analyze", "--currency=US", "cost.csv"}, &stdout, &stderr)
+
+	if code != ExitUsageError {
+		t.Fatalf("expected exit code %d, got %d", ExitUsageError, code)
+	}
+	if !strings.Contains(stderr.String(), `invalid --currency value "US"`) {
+		t.Fatalf("expected invalid currency error, got %q", stderr.String())
 	}
 }
 

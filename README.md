@@ -89,6 +89,12 @@ Focus on selected services:
 marvin analyze --only-service "Amazon Elastic Compute Cloud - Compute" fixtures/sample-cost-explorer.csv
 ```
 
+Analyze one currency from a multi-currency export:
+
+```sh
+marvin analyze --currency=USD fixtures/sample-cost-explorer.csv
+```
+
 Hide small service rows while keeping total spend and warnings intact:
 
 ```sh
@@ -167,6 +173,7 @@ Analyze flags:
 
 ```text
 --config <path>                         Load warning rules from a JSON config file.
+--currency <code>                       Include only records for this currency code.
 --fail-on-warning                       Exit with code 3 when warnings are present.
 --format <terminal|markdown|json|csv>   Output format. Defaults to terminal. Aliases: text, md.
 --from <YYYY-MM>                        Include records from this month onward.

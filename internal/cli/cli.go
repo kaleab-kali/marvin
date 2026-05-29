@@ -31,6 +31,7 @@ var errSampleHelp = errors.New("sample help requested")
 
 type analyzeOptions struct {
 	paths            []string
+	currency         string
 	format           string
 	outputPath       string
 	failOnWarning    bool
@@ -89,6 +90,7 @@ func runAnalyze(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "%v\n", err)
 		return ExitRuntimeError
 	}
+	records = cost.FilterCurrency(records, options.currency)
 	records = cost.FilterIncludedServices(records, options.includedServices)
 	records = cost.FilterIgnoredServices(records, options.ignoredServices)
 	records = filterRecordsByMonth(records, options.fromMonth, options.toMonth)
@@ -356,6 +358,22 @@ func parseAnalyzeArgs(args []string) (analyzeOptions, error) {
 			if err := setReportFormat(&options, strings.TrimPrefix(arg, "--format=")); err != nil {
 				return analyzeOptions{}, err
 			}
+		case arg == "--currency":
+			value, ok := nextArg(args, &i)
+			if !ok {
+				return analyzeOptions{}, errors.New("--currency requires a three-letter currency code")
+			}
+			currency, err := parseCurrencyFlag("--currency", value)
+			if err != nil {
+				return analyzeOptions{}, err
+			}
+			options.currency = currency
+		case strings.HasPrefix(arg, "--currency="):
+			currency, err := parseCurrencyFlag("--currency", strings.TrimPrefix(arg, "--currency="))
+			if err != nil {
+				return analyzeOptions{}, err
+			}
+			options.currency = currency
 		case arg == "--min-service-spend":
 			value, ok := nextArg(args, &i)
 			if !ok {
@@ -824,6 +842,19 @@ func parsePositiveInt(name, value string) (int, error) {
 	return amount, nil
 }
 
+func parseCurrencyFlag(name, value string) (string, error) {
+	value = strings.ToUpper(strings.TrimSpace(value))
+	if len(value) != 3 {
+		return "", fmt.Errorf("invalid %s value %q, expected a three-letter currency code", name, value)
+	}
+	for _, char := range value {
+		if char < 'A' || char > 'Z' {
+			return "", fmt.Errorf("invalid %s value %q, expected a three-letter currency code", name, value)
+		}
+	}
+	return value, nil
+}
+
 func printUsage(w io.Writer) {
 	fmt.Fprint(w, `Marvin reads exported AWS Cost Explorer CSV files and reports cost changes.
 
@@ -846,6 +877,7 @@ func printAnalyzeUsage(w io.Writer) {
 
 Flags:
   --config <path>                       Load warning rules from a JSON config file.
+  --currency <code>                     Include only records for this currency code.
   --fail-on-warning                     Exit with code 3 when warnings are present.
   --format <terminal|markdown|json|csv> Output format. Defaults to terminal.
   --from <YYYY-MM>                     Include records from this month onward.

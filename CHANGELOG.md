@@ -17,6 +17,7 @@ semantic versioning after the first tagged release.
 - `min_service_spend` config setting for reusable service spend report filters.
 - Expanded GitHub issue and pull request templates for contributors.
 - Architecture documentation for contributors.
+- Troubleshooting guide for common CSV, config, and report issues.
 - Configuration reference documentation.
 - Standard input support for `marvin config validate -`.
 - Gzip-compressed CSV input support.

@@ -466,6 +466,40 @@ func TestAnalyzeWritesMarkdownReport(t *testing.T) {
 	}
 }
 
+func TestAnalyzeAcceptsMarkdownFormatAlias(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"analyze", "--format=md", csvPath}, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "# Marvin Cost Report") {
+		t.Fatalf("expected markdown report, got:\n%s", stdout.String())
+	}
+}
+
+func TestAnalyzeAcceptsTerminalFormatAlias(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"analyze", "--format=text", csvPath}, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "Marvin Cost Report") {
+		t.Fatalf("expected terminal report, got:\n%s", stdout.String())
+	}
+}
+
 func TestAnalyzeWritesJSONReport(t *testing.T) {
 	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
 2026-01-01,Amazon EC2,100,USD

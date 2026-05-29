@@ -9,6 +9,7 @@ semantic versioning after the first tagged release.
 
 ### Added
 
+- Report format aliases for `text` and `md`.
 - Config sample generation with `marvin config sample`.
 - Config validation with `marvin config validate`.
 - Release version injection for tagged CLI binaries.

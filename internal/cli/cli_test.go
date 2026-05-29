@@ -601,6 +601,24 @@ func TestAnalyzeUsesConfigFile(t *testing.T) {
 	}
 }
 
+func TestAnalyzeUsesFailOnWarningFromConfig(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+`)
+	configPath := writeTempFile(t, "marvin.json", `{"total_budget": 50, "fail_on_warning": true}`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"analyze", "--config", configPath, csvPath}, &stdout, &stderr)
+
+	if code != ExitWarning {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitWarning, code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "total spend $100.00 exceeds budget $50.00") {
+		t.Fatalf("expected warning output, got:\n%s", stdout.String())
+	}
+}
+
 func TestAnalyzeUsesFormatFromConfig(t *testing.T) {
 	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
 2026-01-01,Amazon EC2,100,USD

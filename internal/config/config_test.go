@@ -34,6 +34,7 @@ func TestLoadIncludesServiceFilters(t *testing.T) {
 	input := strings.NewReader(`{
   "ignore_services": ["Tax", "Credits"],
   "include_services": ["Amazon EC2", "Amazon S3"],
+  "fail_on_warning": true,
   "format": "md",
   "from_month": "2026-01",
   "min_service_spend": 10,
@@ -59,6 +60,9 @@ func TestLoadIncludesServiceFilters(t *testing.T) {
 	}
 	if settings.Format != "markdown" {
 		t.Fatalf("expected markdown format, got %q", settings.Format)
+	}
+	if settings.FailOnWarning == nil || !*settings.FailOnWarning {
+		t.Fatalf("expected fail on warning to be true, got %+v", settings.FailOnWarning)
 	}
 	assertMonth(t, "from month", settings.FromMonth, "2026-01")
 	assertMonth(t, "to month", settings.ToMonth, "2026-02")

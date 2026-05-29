@@ -709,6 +709,9 @@ func loadConfig(options *analyzeOptions, path string) error {
 	if settings.Format != "" {
 		options.format = settings.Format
 	}
+	if settings.FailOnWarning != nil {
+		options.failOnWarning = *settings.FailOnWarning
+	}
 	options.fromMonth = settings.FromMonth
 	options.ignoredServices = settings.IgnoreServices
 	options.includedServices = settings.IncludeServices

@@ -20,6 +20,7 @@ semantic versioning after the first tagged release.
 - Troubleshooting guide for common CSV, config, and report issues.
 - Linux race-detector job in CI.
 - `format` config setting for reusable report output format selection.
+- `fail_on_warning` config setting for reusable warning exit behavior.
 - Configuration reference documentation.
 - Standard input support for `marvin config validate -`.
 - Gzip-compressed CSV input support.

@@ -15,11 +15,13 @@ type warningRulesFile struct {
 	GrowthLimitPercent float64            `json:"growth_limit_percent"`
 	ServiceBudgets     map[string]float64 `json:"service_budgets"`
 	IgnoreServices     []string           `json:"ignore_services"`
+	TopServices        int                `json:"top_services"`
 }
 
 type Settings struct {
 	Rules          cost.WarningRules
 	IgnoreServices []string
+	TopServices    int
 }
 
 func Load(r io.Reader) (Settings, error) {
@@ -37,7 +39,11 @@ func Load(r io.Reader) (Settings, error) {
 		return Settings{}, err
 	}
 
-	return Settings{Rules: rules, IgnoreServices: ignored}, nil
+	if err := validateOptionalNonNegativeInt("top_services", file.TopServices); err != nil {
+		return Settings{}, err
+	}
+
+	return Settings{Rules: rules, IgnoreServices: ignored, TopServices: file.TopServices}, nil
 }
 
 func LoadWarningRules(r io.Reader) (cost.WarningRules, error) {
@@ -104,6 +110,13 @@ func ignoredServicesFromFile(values []string) ([]string, error) {
 }
 
 func validatePositive(name string, value float64) error {
+	if value < 0 {
+		return fmt.Errorf("%s must not be negative", name)
+	}
+	return nil
+}
+
+func validateOptionalNonNegativeInt(name string, value int) error {
 	if value < 0 {
 		return fmt.Errorf("%s must not be negative", name)
 	}

@@ -80,6 +80,8 @@ Or load warning thresholds from JSON:
 marvin analyze --config examples/marvin.json fixtures/sample-cost-explorer.csv
 ```
 
+Config files can also set reusable report options such as `top_services`.
+
 Validate a config file:
 
 ```sh

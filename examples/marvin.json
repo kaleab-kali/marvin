@@ -1,5 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/kaleab-kali/marvin/main/docs/marvin.schema.json",
+  "currency": "USD",
   "total_budget": 300,
   "format": "terminal",
   "growth_limit_percent": 10,

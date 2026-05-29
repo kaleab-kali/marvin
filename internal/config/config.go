@@ -13,6 +13,7 @@ import (
 
 type warningRulesFile struct {
 	Schema             string             `json:"$schema"`
+	Currency           string             `json:"currency"`
 	FailOnWarning      *bool              `json:"fail_on_warning"`
 	TotalBudget        float64            `json:"total_budget"`
 	Format             string             `json:"format"`
@@ -27,6 +28,7 @@ type warningRulesFile struct {
 }
 
 type Settings struct {
+	Currency        string
 	FailOnWarning   *bool
 	Rules           cost.WarningRules
 	Format          string
@@ -67,6 +69,10 @@ func Load(r io.Reader) (Settings, error) {
 	if err != nil {
 		return Settings{}, err
 	}
+	currency, err := currencyFromFile(file.Currency)
+	if err != nil {
+		return Settings{}, err
+	}
 	failOnWarning := optionalBool(file.FailOnWarning)
 	fromMonth, err := parseOptionalMonth("from_month", file.FromMonth)
 	if err != nil {
@@ -81,6 +87,7 @@ func Load(r io.Reader) (Settings, error) {
 	}
 
 	return Settings{
+		Currency:        currency,
 		FailOnWarning:   failOnWarning,
 		Rules:           rules,
 		Format:          format,
@@ -91,6 +98,22 @@ func Load(r io.Reader) (Settings, error) {
 		ToMonth:         toMonth,
 		TopServices:     file.TopServices,
 	}, nil
+}
+
+func currencyFromFile(value string) (string, error) {
+	value = strings.ToUpper(strings.TrimSpace(value))
+	if value == "" {
+		return "", nil
+	}
+	if len(value) != 3 {
+		return "", fmt.Errorf("invalid currency value %q, expected a three-letter currency code", value)
+	}
+	for _, char := range value {
+		if char < 'A' || char > 'Z' {
+			return "", fmt.Errorf("invalid currency value %q, expected a three-letter currency code", value)
+		}
+	}
+	return value, nil
 }
 
 func optionalBool(value *bool) *bool {

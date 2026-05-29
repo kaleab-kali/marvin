@@ -34,6 +34,7 @@ func TestLoadIncludesServiceFilters(t *testing.T) {
 	input := strings.NewReader(`{
   "ignore_services": ["Tax", "Credits"],
   "include_services": ["Amazon EC2", "Amazon S3"],
+  "currency": "usd",
   "fail_on_warning": true,
   "format": "md",
   "from_month": "2026-01",
@@ -60,6 +61,9 @@ func TestLoadIncludesServiceFilters(t *testing.T) {
 	}
 	if settings.Format != "markdown" {
 		t.Fatalf("expected markdown format, got %q", settings.Format)
+	}
+	if settings.Currency != "USD" {
+		t.Fatalf("expected USD currency, got %q", settings.Currency)
 	}
 	if settings.FailOnWarning == nil || !*settings.FailOnWarning {
 		t.Fatalf("expected fail on warning to be true, got %+v", settings.FailOnWarning)
@@ -101,6 +105,16 @@ func TestLoadRejectsEmptyIncludeService(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "include_services contains an empty service name") {
 		t.Fatalf("expected empty include service error, got %v", err)
+	}
+}
+
+func TestLoadRejectsInvalidCurrency(t *testing.T) {
+	_, err := Load(strings.NewReader(`{"currency": "US"}`))
+	if err == nil {
+		t.Fatal("expected invalid currency error")
+	}
+	if !strings.Contains(err.Error(), `invalid currency value "US"`) {
+		t.Fatalf("expected invalid currency error, got %v", err)
 	}
 }
 

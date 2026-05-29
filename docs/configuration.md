@@ -26,6 +26,7 @@ All fields are optional.
 | Field | Type | Description |
 | --- | --- | --- |
 | `$schema` | string | Optional editor hint for JSON Schema validation. |
+| `currency` | string | Include only records for this three-letter currency code. |
 | `fail_on_warning` | boolean | Exit with code 3 when warnings are present. |
 | `total_budget` | number | Warn when total filtered spend exceeds this amount. |
 | `format` | string | Report output format: `terminal`, `markdown`, `json`, or `csv`. Aliases: `text`, `md`. |
@@ -61,6 +62,7 @@ Marvin also validates rules that JSON Schema cannot express, such as requiring
 ```json
 {
   "$schema": "https://raw.githubusercontent.com/kaleab-kali/marvin/main/docs/marvin.schema.json",
+  "currency": "USD",
   "total_budget": 300,
   "format": "terminal",
   "growth_limit_percent": 10,

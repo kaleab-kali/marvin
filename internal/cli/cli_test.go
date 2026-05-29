@@ -3,6 +3,7 @@ package cli
 import (
 	"bytes"
 	"compress/gzip"
+	"encoding/csv"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -832,6 +833,33 @@ func TestAnalyzeWritesJSONReport(t *testing.T) {
 	}
 }
 
+func TestAnalyzeWritesCSVReport(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"analyze", "--format", "csv", csvPath}, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
+	}
+	rows, err := csv.NewReader(strings.NewReader(stdout.String())).ReadAll()
+	if err != nil {
+		t.Fatalf("expected valid CSV, got %v with output:\n%s", err, stdout.String())
+	}
+	if len(rows) < 2 {
+		t.Fatalf("expected CSV rows, got %+v", rows)
+	}
+	if got, want := rows[0][0], "section"; got != want {
+		t.Fatalf("expected first header %q, got %q", want, got)
+	}
+	if !hasCSVRow(rows, "service_spend", "", "", "Amazon EC2", "USD", "100.00", "", "", "", "", "", "", "") {
+		t.Fatalf("expected service spend CSV row, got %+v", rows)
+	}
+}
+
 func TestAnalyzeWritesReportToOutputFile(t *testing.T) {
 	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
 2026-01-01,Amazon EC2,100,USD
@@ -902,6 +930,25 @@ func writeTempFile(t *testing.T, name string, content string) string {
 		t.Fatalf("write temp file: %v", err)
 	}
 	return path
+}
+
+func hasCSVRow(rows [][]string, want ...string) bool {
+	for _, row := range rows {
+		if len(row) != len(want) {
+			continue
+		}
+		matched := true
+		for i := range row {
+			if row[i] != want[i] {
+				matched = false
+				break
+			}
+		}
+		if matched {
+			return true
+		}
+	}
+	return false
 }
 
 func writeTempGzipFile(t *testing.T, name string, content string) string {

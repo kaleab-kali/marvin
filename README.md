@@ -123,6 +123,7 @@ marvin analyze --format text fixtures/sample-cost-explorer.csv
 marvin analyze --format markdown fixtures/sample-cost-explorer.csv
 marvin analyze --format md fixtures/sample-cost-explorer.csv
 marvin analyze --format json fixtures/sample-cost-explorer.csv
+marvin analyze --format csv fixtures/sample-cost-explorer.csv
 ```
 
 `terminal` is the default format.
@@ -158,7 +159,7 @@ Analyze flags:
 ```text
 --config <path>                         Load warning rules from a JSON config file.
 --fail-on-warning                       Exit with code 3 when warnings are present.
---format <terminal|markdown|json>       Output format. Defaults to terminal. Aliases: text, md.
+--format <terminal|markdown|json|csv>   Output format. Defaults to terminal. Aliases: text, md.
 --from <YYYY-MM>                        Include records from this month onward.
 --ignore-service <service>              Exclude a service from totals and warnings. Repeatable.
 --only-service <service>                Include only this service. Repeatable.

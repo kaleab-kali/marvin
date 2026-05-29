@@ -15,6 +15,7 @@ semantic versioning after the first tagged release.
 - CSV report output with `marvin analyze --format csv`.
 - Minimum service spend report filtering with `marvin analyze --min-service-spend`.
 - `min_service_spend` config setting for reusable service spend report filters.
+- Expanded GitHub issue and pull request templates for contributors.
 - Configuration reference documentation.
 - Standard input support for `marvin config validate -`.
 - Gzip-compressed CSV input support.

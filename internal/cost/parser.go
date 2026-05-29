@@ -245,9 +245,9 @@ func parseCostValue(value string) (float64, error) {
 	fields := strings.Fields(value)
 	if len(fields) == 2 {
 		switch {
-		case strings.EqualFold(fields[0], "USD"):
+		case isCurrencyCode(fields[0]):
 			value = fields[1]
-		case strings.EqualFold(fields[1], "USD"):
+		case isCurrencyCode(fields[1]):
 			value = fields[0]
 		}
 	}
@@ -261,6 +261,18 @@ func parseCostValue(value string) (float64, error) {
 	}
 
 	return amount, nil
+}
+
+func isCurrencyCode(value string) bool {
+	if len(value) != 3 {
+		return false
+	}
+	for _, char := range value {
+		if !unicode.IsLetter(char) {
+			return false
+		}
+	}
+	return true
 }
 
 func normalizeHeader(value string) string {

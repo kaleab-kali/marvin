@@ -49,6 +49,12 @@ Run the sample report:
 marvin analyze fixtures/sample-cost-explorer.csv
 ```
 
+Analyze multiple CSV exports together:
+
+```sh
+marvin analyze account-a.csv account-b.csv
+```
+
 Generate a sample CSV:
 
 ```sh
@@ -105,7 +111,7 @@ For guidance on exporting compatible AWS data, see
 ## CLI Usage
 
 ```text
-marvin analyze [flags] <cost-explorer.csv|->
+marvin analyze [flags] <cost-explorer.csv|-> [more.csv ...]
 marvin config sample [flags]
 marvin config validate <marvin.json>
 marvin sample [flags]

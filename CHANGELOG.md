@@ -9,6 +9,7 @@ semantic versioning after the first tagged release.
 
 ### Added
 
+- Multi-file analysis with `marvin analyze <file> [more.csv ...]`.
 - Cost value parsing for generic three-letter currency code prefixes and suffixes.
 - Empty CSV data detection for header-only cost exports.
 - Report format aliases for `text` and `md`.

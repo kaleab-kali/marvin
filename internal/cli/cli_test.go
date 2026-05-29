@@ -18,7 +18,7 @@ func TestRunShowsHelpWithoutArgs(t *testing.T) {
 	if code != ExitOK {
 		t.Fatalf("expected exit code %d, got %d", ExitOK, code)
 	}
-	if !strings.Contains(stdout.String(), "marvin analyze [flags] <cost-explorer.csv|->") {
+	if !strings.Contains(stdout.String(), "marvin analyze [flags] <cost-explorer.csv|-> [more.csv ...]") {
 		t.Fatalf("expected usage in stdout, got %q", stdout.String())
 	}
 	if stderr.Len() != 0 {
@@ -277,6 +277,33 @@ func TestAnalyzeWritesTerminalReport(t *testing.T) {
 	}
 }
 
+func TestAnalyzeCombinesMultipleCostCSVs(t *testing.T) {
+	firstCSV := writeTempFile(t, "cost-1.csv", `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+`)
+	secondCSV := writeTempFile(t, "cost-2.csv", `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon S3,25,USD
+`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"analyze", firstCSV, secondCSV}, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
+	}
+	output := stdout.String()
+	for _, want := range []string{
+		"Total spend: $125.00",
+		"Amazon EC2",
+		"Amazon S3",
+	} {
+		if !strings.Contains(output, want) {
+			t.Fatalf("expected output to contain %q, got:\n%s", want, output)
+		}
+	}
+}
+
 func TestAnalyzeReadsCostCSVFromStdin(t *testing.T) {
 	input := strings.NewReader(`Start Date,Service,Unblended Cost,Currency
 2026-01-01,Amazon EC2,100,USD
@@ -294,6 +321,26 @@ func TestAnalyzeReadsCostCSVFromStdin(t *testing.T) {
 	}
 	if stderr.Len() != 0 {
 		t.Fatalf("expected empty stderr, got %q", stderr.String())
+	}
+}
+
+func TestAnalyzeRejectsRepeatedStdinPath(t *testing.T) {
+	input := strings.NewReader(`Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := RunWithIO([]string{"analyze", "-", "-"}, input, &stdout, &stderr)
+
+	if code != ExitUsageError {
+		t.Fatalf("expected exit code %d, got %d", ExitUsageError, code)
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("expected empty stdout, got %q", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), "analyze accepts standard input only once") {
+		t.Fatalf("expected repeated stdin error, got %q", stderr.String())
 	}
 }
 

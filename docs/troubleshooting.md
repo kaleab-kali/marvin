@@ -40,8 +40,12 @@ spaces.
 ## `multiple currencies found after filters`
 
 Marvin reports one currency at a time. If a CSV contains multiple currencies,
-use service or month filters to isolate one currency before generating a report,
-or export separate Cost Explorer files per currency.
+use `--currency` to isolate one currency before generating a report, or export
+separate Cost Explorer files per currency.
+
+```sh
+marvin analyze --currency=USD cost-explorer.csv
+```
 
 ## `invalid --from value` or `invalid --to value`
 

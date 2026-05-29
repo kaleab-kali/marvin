@@ -61,3 +61,33 @@ func TestFilterIncludedServicesReturnsOriginalRecordsWhenNoRules(t *testing.T) {
 		t.Fatalf("expected Amazon EC2, got %q", got[0].Service)
 	}
 }
+
+func TestFilterCurrency(t *testing.T) {
+	records := []Record{
+		{Service: "Amazon EC2", Cost: 100, Currency: "usd"},
+		{Service: "Amazon S3", Cost: 25, Currency: "GBP"},
+		{Service: "AWS KMS", Cost: 3},
+	}
+
+	got := FilterCurrency(records, " USD ")
+
+	if len(got) != 2 {
+		t.Fatalf("expected 2 USD records, got %d", len(got))
+	}
+	if got[0].Service != "Amazon EC2" || got[1].Service != "AWS KMS" {
+		t.Fatalf("unexpected currency filtered records: %+v", got)
+	}
+}
+
+func TestFilterCurrencyReturnsOriginalRecordsWhenNoCurrency(t *testing.T) {
+	records := []Record{{Service: "Amazon EC2", Cost: 100, Currency: "USD"}}
+
+	got := FilterCurrency(records, "")
+
+	if len(got) != 1 {
+		t.Fatalf("expected 1 record, got %d", len(got))
+	}
+	if got[0].Service != "Amazon EC2" {
+		t.Fatalf("expected Amazon EC2, got %q", got[0].Service)
+	}
+}

@@ -21,6 +21,7 @@ semantic versioning after the first tagged release.
 - Linux race-detector job in CI.
 - `format` config setting for reusable report output format selection.
 - `fail_on_warning` config setting for reusable warning exit behavior.
+- Currency filtering with `marvin analyze --currency`.
 - Configuration reference documentation.
 - Standard input support for `marvin config validate -`.
 - Gzip-compressed CSV input support.

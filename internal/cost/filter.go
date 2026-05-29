@@ -45,3 +45,27 @@ func FilterIncludedServices(records []Record, includedServices []string) []Recor
 	}
 	return filtered
 }
+
+func FilterCurrency(records []Record, currency string) []Record {
+	currency = strings.ToUpper(strings.TrimSpace(currency))
+	if currency == "" {
+		return records
+	}
+
+	filtered := make([]Record, 0, len(records))
+	for _, record := range records {
+		if normalizeRecordCurrency(record.Currency) != currency {
+			continue
+		}
+		filtered = append(filtered, record)
+	}
+	return filtered
+}
+
+func normalizeRecordCurrency(value string) string {
+	value = strings.ToUpper(strings.TrimSpace(value))
+	if value == "" {
+		return "USD"
+	}
+	return value
+}

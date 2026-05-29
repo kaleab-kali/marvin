@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"compress/gzip"
 	"errors"
 	"fmt"
 	"io"
@@ -127,14 +128,13 @@ func readCostRecords(paths []string, stdin io.Reader) ([]cost.Record, error) {
 	var records []cost.Record
 	for _, path := range paths {
 		input := stdin
-		var file *os.File
+		var file io.Closer
 		if path != "-" {
 			var err error
-			file, err = os.Open(path)
+			file, input, err = openCostCSV(path)
 			if err != nil {
 				return nil, fmt.Errorf("open cost CSV %q: %w", path, err)
 			}
-			input = file
 		}
 
 		parsed, err := cost.ParseCostExplorerCSV(input)
@@ -149,6 +149,38 @@ func readCostRecords(paths []string, stdin io.Reader) ([]cost.Record, error) {
 		records = append(records, parsed...)
 	}
 	return records, nil
+}
+
+func openCostCSV(path string) (io.Closer, io.Reader, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if !strings.HasSuffix(strings.ToLower(path), ".gz") {
+		return file, file, nil
+	}
+
+	gz, err := gzip.NewReader(file)
+	if err != nil {
+		file.Close()
+		return nil, nil, err
+	}
+	return joinedCloser{closers: []io.Closer{gz, file}}, gz, nil
+}
+
+type joinedCloser struct {
+	closers []io.Closer
+}
+
+func (closer joinedCloser) Close() error {
+	var closeErr error
+	for _, item := range closer.closers {
+		if err := item.Close(); closeErr == nil && err != nil {
+			closeErr = err
+		}
+	}
+	return closeErr
 }
 
 func runConfigCommand(args []string, stdout, stderr io.Writer) int {

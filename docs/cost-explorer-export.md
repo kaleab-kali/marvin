@@ -75,6 +75,12 @@ To combine multiple exports into one report:
 marvin analyze path/to/account-a.csv path/to/account-b.csv
 ```
 
+Marvin also reads gzip-compressed CSV files:
+
+```sh
+marvin analyze path/to/cost-explorer.csv.gz
+```
+
 Marvin can also read a CSV from standard input:
 
 ```sh

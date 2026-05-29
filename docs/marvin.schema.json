@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/kaleab-kali/marvin/main/docs/marvin.schema.json",
+  "title": "Marvin configuration",
+  "description": "Reusable analysis settings for the Marvin AWS Cost Explorer CSV CLI.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "format": "uri",
+      "description": "Optional editor hint for JSON Schema validation."
+    },
+    "total_budget": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Warn when total filtered spend exceeds this amount."
+    },
+    "growth_limit_percent": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Warn when month-over-month growth exceeds this percentage."
+    },
+    "from_month": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$",
+      "description": "Include records from this month onward. Format: YYYY-MM."
+    },
+    "to_month": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$",
+      "description": "Include records through this month. Format: YYYY-MM."
+    },
+    "top_services": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Limit service rows in report output. Zero means no limit."
+    },
+    "include_services": {
+      "type": "array",
+      "description": "Services to include in totals, warnings, and report output.",
+      "items": {
+        "type": "string",
+        "pattern": "\\S"
+      },
+      "uniqueItems": true
+    },
+    "ignore_services": {
+      "type": "array",
+      "description": "Services to exclude from totals, warnings, and report output.",
+      "items": {
+        "type": "string",
+        "pattern": "\\S"
+      },
+      "uniqueItems": true
+    },
+    "service_budgets": {
+      "type": "object",
+      "description": "Map of service name to budget amount.",
+      "propertyNames": {
+        "pattern": "\\S"
+      },
+      "additionalProperties": {
+        "type": "number",
+        "minimum": 0
+      }
+    }
+  }
+}

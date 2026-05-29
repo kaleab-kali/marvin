@@ -856,6 +856,7 @@ const sampleCostExplorerCSV = `Start Date,End Date,Service,Unblended Cost,Curren
 `
 
 const sampleConfigJSON = `{
+  "$schema": "https://raw.githubusercontent.com/kaleab-kali/marvin/main/docs/marvin.schema.json",
   "total_budget": 300,
   "growth_limit_percent": 10,
   "from_month": "2026-01",

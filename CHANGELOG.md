@@ -9,6 +9,7 @@ semantic versioning after the first tagged release.
 
 ### Added
 
+- `top_services` config setting for reusable service row limits.
 - Service row limiting with `marvin analyze --top-services`.
 - Multi-file analysis with `marvin analyze <file> [more.csv ...]`.
 - Cost value parsing for generic three-letter currency code prefixes and suffixes.

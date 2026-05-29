@@ -456,6 +456,29 @@ func TestAnalyzeUsesConfigFile(t *testing.T) {
 	}
 }
 
+func TestAnalyzeUsesTopServicesFromConfig(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+2026-01-01,Amazon S3,25,USD
+`)
+	configPath := writeTempFile(t, "marvin.json", `{"top_services": 1}`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"analyze", "--config", configPath, csvPath}, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
+	}
+	output := stdout.String()
+	if !strings.Contains(output, "Amazon EC2") {
+		t.Fatalf("expected top service in report, got:\n%s", output)
+	}
+	if strings.Contains(output, "Amazon S3") {
+		t.Fatalf("expected second service to be hidden by config top_services, got:\n%s", output)
+	}
+}
+
 func TestAnalyzeIgnoresServicesFromConfig(t *testing.T) {
 	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
 2026-01-01,Amazon EC2,100,USD

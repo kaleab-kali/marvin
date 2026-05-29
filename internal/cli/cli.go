@@ -525,6 +525,7 @@ func loadConfig(options *analyzeOptions, path string) error {
 	}
 	options.rules = settings.Rules
 	options.ignoredServices = settings.IgnoreServices
+	options.topServices = settings.TopServices
 	if options.rules.ServiceLimits == nil {
 		options.rules.ServiceLimits = make(map[string]float64)
 	}
@@ -686,6 +687,7 @@ const sampleCostExplorerCSV = `Start Date,End Date,Service,Unblended Cost,Curren
 const sampleConfigJSON = `{
   "total_budget": 300,
   "growth_limit_percent": 10,
+  "top_services": 10,
   "service_budgets": {
     "Amazon Elastic Compute Cloud - Compute": 200
   },

@@ -31,7 +31,8 @@ func TestLoadWarningRules(t *testing.T) {
 
 func TestLoadIncludesIgnoredServices(t *testing.T) {
 	input := strings.NewReader(`{
-  "ignore_services": ["Tax", "Credits"]
+  "ignore_services": ["Tax", "Credits"],
+  "top_services": 10
 }`)
 
 	settings, err := Load(input)
@@ -43,6 +44,9 @@ func TestLoadIncludesIgnoredServices(t *testing.T) {
 	}
 	if settings.IgnoreServices[0] != "Tax" || settings.IgnoreServices[1] != "Credits" {
 		t.Fatalf("unexpected ignored services: %+v", settings.IgnoreServices)
+	}
+	if settings.TopServices != 10 {
+		t.Fatalf("expected top services 10, got %d", settings.TopServices)
 	}
 }
 
@@ -63,5 +67,15 @@ func TestLoadWarningRulesRejectsNegativeValues(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "growth_limit_percent must not be negative") {
 		t.Fatalf("expected negative value error, got %v", err)
+	}
+}
+
+func TestLoadRejectsNegativeTopServices(t *testing.T) {
+	_, err := Load(strings.NewReader(`{"top_services": -1}`))
+	if err == nil {
+		t.Fatal("expected negative top services error")
+	}
+	if !strings.Contains(err.Error(), "top_services must not be negative") {
+		t.Fatalf("expected negative top services error, got %v", err)
 	}
 }

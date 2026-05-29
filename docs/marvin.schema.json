@@ -16,6 +16,18 @@
       "minimum": 0,
       "description": "Warn when total filtered spend exceeds this amount."
     },
+    "format": {
+      "type": "string",
+      "enum": [
+        "terminal",
+        "text",
+        "markdown",
+        "md",
+        "json",
+        "csv"
+      ],
+      "description": "Report output format."
+    },
     "growth_limit_percent": {
       "type": "number",
       "minimum": 0,

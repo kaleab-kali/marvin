@@ -601,6 +601,28 @@ func TestAnalyzeUsesConfigFile(t *testing.T) {
 	}
 }
 
+func TestAnalyzeUsesFormatFromConfig(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+`)
+	configPath := writeTempFile(t, "marvin.json", `{"format": "csv"}`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"analyze", "--config", configPath, csvPath}, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
+	}
+	rows, err := csv.NewReader(strings.NewReader(stdout.String())).ReadAll()
+	if err != nil {
+		t.Fatalf("expected valid CSV from configured format, got %v with output:\n%s", err, stdout.String())
+	}
+	if !hasCSVRow(rows, "service_spend", "", "", "Amazon EC2", "USD", "100.00", "", "", "", "", "", "", "") {
+		t.Fatalf("expected CSV report from configured format, got %+v", rows)
+	}
+}
+
 func TestAnalyzeUsesTopServicesFromConfig(t *testing.T) {
 	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
 2026-01-01,Amazon EC2,100,USD

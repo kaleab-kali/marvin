@@ -34,6 +34,7 @@ func TestLoadIncludesServiceFilters(t *testing.T) {
 	input := strings.NewReader(`{
   "ignore_services": ["Tax", "Credits"],
   "include_services": ["Amazon EC2", "Amazon S3"],
+  "format": "md",
   "from_month": "2026-01",
   "min_service_spend": 10,
   "to_month": "2026-02",
@@ -55,6 +56,9 @@ func TestLoadIncludesServiceFilters(t *testing.T) {
 	}
 	if settings.IncludeServices[0] != "Amazon EC2" || settings.IncludeServices[1] != "Amazon S3" {
 		t.Fatalf("unexpected included services: %+v", settings.IncludeServices)
+	}
+	if settings.Format != "markdown" {
+		t.Fatalf("expected markdown format, got %q", settings.Format)
 	}
 	assertMonth(t, "from month", settings.FromMonth, "2026-01")
 	assertMonth(t, "to month", settings.ToMonth, "2026-02")
@@ -93,6 +97,16 @@ func TestLoadRejectsEmptyIncludeService(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "include_services contains an empty service name") {
 		t.Fatalf("expected empty include service error, got %v", err)
+	}
+}
+
+func TestLoadRejectsUnsupportedFormat(t *testing.T) {
+	_, err := Load(strings.NewReader(`{"format": "xml"}`))
+	if err == nil {
+		t.Fatal("expected unsupported format error")
+	}
+	if !strings.Contains(err.Error(), `unsupported format value "xml"`) {
+		t.Fatalf("expected unsupported format error, got %v", err)
 	}
 }
 

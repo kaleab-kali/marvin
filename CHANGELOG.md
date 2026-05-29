@@ -9,6 +9,7 @@ semantic versioning after the first tagged release.
 
 ### Added
 
+- `from_month` and `to_month` config settings for reusable month range filters.
 - Month range filtering with `marvin analyze --from` and `--to`.
 - `top_services` config setting for reusable service row limits.
 - Service row limiting with `marvin analyze --top-services`.

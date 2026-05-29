@@ -87,6 +87,33 @@ func TestParseCostExplorerCSVRejectsMissingRequiredColumns(t *testing.T) {
 	}
 }
 
+func TestParseCostExplorerCSVRejectsHeaderOnlyFile(t *testing.T) {
+	input := strings.NewReader(`Start Date,Service,Unblended Cost,Currency
+`)
+
+	_, err := ParseCostExplorerCSV(input)
+	if err == nil {
+		t.Fatal("expected no data rows error")
+	}
+	if !strings.Contains(err.Error(), "cost CSV contains no data rows") {
+		t.Fatalf("expected no data rows error, got %v", err)
+	}
+}
+
+func TestParseCostExplorerCSVRejectsBlankDataRows(t *testing.T) {
+	input := strings.NewReader(`Start Date,Service,Unblended Cost,Currency
+,,,
+`)
+
+	_, err := ParseCostExplorerCSV(input)
+	if err == nil {
+		t.Fatal("expected no data rows error")
+	}
+	if !strings.Contains(err.Error(), "cost CSV contains no data rows") {
+		t.Fatalf("expected no data rows error, got %v", err)
+	}
+}
+
 func TestParseCostExplorerCSVIncludesLineNumberOnBadCost(t *testing.T) {
 	input := strings.NewReader(`Start Date,Service,Unblended Cost,Currency
 2026-01-01,Amazon EC2,nope,USD

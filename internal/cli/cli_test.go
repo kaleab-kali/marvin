@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -301,6 +302,23 @@ func TestAnalyzeCombinesMultipleCostCSVs(t *testing.T) {
 		if !strings.Contains(output, want) {
 			t.Fatalf("expected output to contain %q, got:\n%s", want, output)
 		}
+	}
+}
+
+func TestAnalyzeReadsGzipCostCSV(t *testing.T) {
+	csvPath := writeTempGzipFile(t, "cost.csv.gz", `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"analyze", csvPath}, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "Total spend: $100.00") {
+		t.Fatalf("expected gzip CSV to be analyzed, got:\n%s", stdout.String())
 	}
 }
 
@@ -813,6 +831,27 @@ func writeTempFile(t *testing.T, name string, content string) string {
 	path := filepath.Join(t.TempDir(), name)
 	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
 		t.Fatalf("write temp file: %v", err)
+	}
+	return path
+}
+
+func writeTempGzipFile(t *testing.T, name string, content string) string {
+	t.Helper()
+
+	path := filepath.Join(t.TempDir(), name)
+	file, err := os.Create(path)
+	if err != nil {
+		t.Fatalf("create temp gzip file: %v", err)
+	}
+	gz := gzip.NewWriter(file)
+	if _, err := gz.Write([]byte(content)); err != nil {
+		t.Fatalf("write gzip content: %v", err)
+	}
+	if err := gz.Close(); err != nil {
+		t.Fatalf("close gzip writer: %v", err)
+	}
+	if err := file.Close(); err != nil {
+		t.Fatalf("close temp gzip file: %v", err)
 	}
 	return path
 }

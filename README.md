@@ -58,6 +58,12 @@ Analyze multiple CSV exports together:
 marvin analyze account-a.csv account-b.csv
 ```
 
+Read a gzip-compressed CSV export:
+
+```sh
+marvin analyze cost-explorer.csv.gz
+```
+
 Generate a sample CSV:
 
 ```sh

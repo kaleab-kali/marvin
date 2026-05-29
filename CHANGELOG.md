@@ -9,6 +9,7 @@ semantic versioning after the first tagged release.
 
 ### Added
 
+- Gzip-compressed CSV input support.
 - Currency-aware report formatting and mixed-currency analysis validation.
 - Empty filtered-result detection for analysis filters.
 - `from_month` and `to_month` config settings for reusable month range filters.

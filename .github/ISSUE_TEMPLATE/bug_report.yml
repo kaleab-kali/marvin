@@ -22,15 +22,46 @@ body:
     validations:
       required: true
   - type: textarea
+    id: input
+    attributes:
+      label: Input Details
+      description: Describe the exported Cost Explorer CSV shape, headers, date range, and any config used. Do not paste sensitive billing data.
+      placeholder: |
+        CSV headers:
+        Config:
+        Date range:
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Output
+      description: Paste the relevant terminal output or report snippet.
+    validations:
+      required: true
+  - type: textarea
     id: expected
     attributes:
       label: Expected Behavior
+    validations:
+      required: true
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - CSV parsing
+        - Analysis totals or warnings
+        - Report formatting
+        - Config loading
+        - Documentation
+        - Other
     validations:
       required: true
   - type: textarea
     id: environment
     attributes:
       label: Environment
-      description: Include OS, Go version, and Marvin version or commit.
+      description: Include OS, shell, Go version, and Marvin version or commit.
     validations:
       required: true

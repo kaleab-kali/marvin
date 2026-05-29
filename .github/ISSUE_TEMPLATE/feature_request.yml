@@ -18,8 +18,40 @@ body:
       description: Describe the smallest useful version of the change.
     validations:
       required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - CSV parsing
+        - Analysis filters
+        - Warning rules
+        - Report output
+        - Config files
+        - Documentation
+        - Release or CI
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: success
+    attributes:
+      label: Success Criteria
+      description: What behavior, command output, or documentation would make this complete?
+      placeholder: |
+        - `marvin analyze ...` should ...
+        - Docs should explain ...
+    validations:
+      required: true
   - type: textarea
     id: alternatives
     attributes:
       label: Alternatives
       description: What workarounds or other approaches did you consider?
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Project Scope
+      options:
+        - label: This keeps v0.1 focused on local Cost Explorer CSV exports without live AWS API access.
+          required: true

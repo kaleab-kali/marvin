@@ -13,6 +13,7 @@ import (
 
 type warningRulesFile struct {
 	Schema             string             `json:"$schema"`
+	FailOnWarning      *bool              `json:"fail_on_warning"`
 	TotalBudget        float64            `json:"total_budget"`
 	Format             string             `json:"format"`
 	GrowthLimitPercent float64            `json:"growth_limit_percent"`
@@ -26,6 +27,7 @@ type warningRulesFile struct {
 }
 
 type Settings struct {
+	FailOnWarning   *bool
 	Rules           cost.WarningRules
 	Format          string
 	FromMonth       time.Time
@@ -65,6 +67,7 @@ func Load(r io.Reader) (Settings, error) {
 	if err != nil {
 		return Settings{}, err
 	}
+	failOnWarning := optionalBool(file.FailOnWarning)
 	fromMonth, err := parseOptionalMonth("from_month", file.FromMonth)
 	if err != nil {
 		return Settings{}, err
@@ -78,6 +81,7 @@ func Load(r io.Reader) (Settings, error) {
 	}
 
 	return Settings{
+		FailOnWarning:   failOnWarning,
 		Rules:           rules,
 		Format:          format,
 		FromMonth:       fromMonth,
@@ -87,6 +91,14 @@ func Load(r io.Reader) (Settings, error) {
 		ToMonth:         toMonth,
 		TopServices:     file.TopServices,
 	}, nil
+}
+
+func optionalBool(value *bool) *bool {
+	if value == nil {
+		return nil
+	}
+	copied := *value
+	return &copied
 }
 
 func LoadWarningRules(r io.Reader) (cost.WarningRules, error) {

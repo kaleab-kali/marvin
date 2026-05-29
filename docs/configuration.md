@@ -26,6 +26,7 @@ All fields are optional.
 | Field | Type | Description |
 | --- | --- | --- |
 | `$schema` | string | Optional editor hint for JSON Schema validation. |
+| `fail_on_warning` | boolean | Exit with code 3 when warnings are present. |
 | `total_budget` | number | Warn when total filtered spend exceeds this amount. |
 | `format` | string | Report output format: `terminal`, `markdown`, `json`, or `csv`. Aliases: `text`, `md`. |
 | `growth_limit_percent` | number | Warn when month-over-month growth exceeds this percentage. |

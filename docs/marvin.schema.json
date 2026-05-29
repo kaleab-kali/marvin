@@ -11,6 +11,10 @@
       "format": "uri",
       "description": "Optional editor hint for JSON Schema validation."
     },
+    "fail_on_warning": {
+      "type": "boolean",
+      "description": "Exit with code 3 when warnings are present."
+    },
     "total_budget": {
       "type": "number",
       "minimum": 0,

@@ -655,6 +655,29 @@ func TestAnalyzeUsesFailOnWarningFromConfig(t *testing.T) {
 	}
 }
 
+func TestAnalyzeUsesCurrencyFromConfig(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+2026-01-01,Amazon S3,25,GBP
+`)
+	configPath := writeTempFile(t, "marvin.json", `{"currency": "gbp"}`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"analyze", "--config", configPath, csvPath}, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
+	}
+	output := stdout.String()
+	if !strings.Contains(output, "Total spend: GBP 25.00") {
+		t.Fatalf("expected GBP filtered total, got:\n%s", output)
+	}
+	if strings.Contains(output, "Amazon EC2") {
+		t.Fatalf("expected USD service to be excluded, got:\n%s", output)
+	}
+}
+
 func TestAnalyzeUsesFormatFromConfig(t *testing.T) {
 	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
 2026-01-01,Amazon EC2,100,USD

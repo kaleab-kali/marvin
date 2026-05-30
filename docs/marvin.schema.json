@@ -11,6 +11,11 @@
       "format": "uri",
       "description": "Optional editor hint for JSON Schema validation."
     },
+    "currency": {
+      "type": "string",
+      "pattern": "^[A-Za-z]{3}$",
+      "description": "Include only records for this three-letter currency code."
+    },
     "fail_on_warning": {
       "type": "boolean",
       "description": "Exit with code 3 when warnings are present."

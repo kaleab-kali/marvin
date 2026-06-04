@@ -118,6 +118,12 @@ To keep the service section short for large exports:
 marvin analyze --top-services=10 path/to/cost-explorer.csv
 ```
 
+To sort the visible service rows alphabetically:
+
+```sh
+marvin analyze --sort-services=name path/to/cost-explorer.csv
+```
+
 To hide very small service rows while keeping totals and warnings based on all
 included records:
 

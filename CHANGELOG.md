@@ -25,6 +25,7 @@ semantic versioning after the first tagged release.
 - `currency` config setting for reusable currency filters.
 - `output_path` config setting for reusable report file output.
 - Cost Explorer CSV validation with `marvin validate`.
+- Service row sorting with `marvin analyze --sort-services`.
 - Configuration reference documentation.
 - Standard input support for `marvin config validate -`.
 - Gzip-compressed CSV input support.

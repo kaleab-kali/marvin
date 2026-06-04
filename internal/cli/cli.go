@@ -40,6 +40,7 @@ type analyzeOptions struct {
 	ignoredServices  []string
 	includedServices []string
 	minServiceSpend  float64
+	serviceSort      string
 	toMonth          time.Time
 	topServices      int
 	rules            cost.WarningRules
@@ -108,6 +109,7 @@ func runAnalyze(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	summary := report.BuildSummary(records, options.rules)
 	summary = filterServiceSpend(summary, options.minServiceSpend)
 	summary = limitServiceSpend(summary, options.topServices)
+	summary = sortServiceSpend(summary, options.serviceSort)
 
 	output := stdout
 	var outputFile *os.File
@@ -329,8 +331,9 @@ func runSample(args []string, stdout, stderr io.Writer) int {
 
 func parseAnalyzeArgs(args []string) (analyzeOptions, error) {
 	options := analyzeOptions{
-		format: "terminal",
-		rules:  cost.WarningRules{ServiceLimits: make(map[string]float64)},
+		format:      "terminal",
+		rules:       cost.WarningRules{ServiceLimits: make(map[string]float64)},
+		serviceSort: "cost",
 	}
 
 	for i := 0; i < len(args); i++ {
@@ -442,6 +445,18 @@ func parseAnalyzeArgs(args []string) (analyzeOptions, error) {
 			}
 		case strings.HasPrefix(arg, "--output="):
 			if err := setOutputPath(&options, strings.TrimPrefix(arg, "--output=")); err != nil {
+				return analyzeOptions{}, err
+			}
+		case arg == "--sort-services":
+			value, ok := nextArg(args, &i)
+			if !ok {
+				return analyzeOptions{}, errors.New("--sort-services requires cost or name")
+			}
+			if err := setServiceSort(&options, value); err != nil {
+				return analyzeOptions{}, err
+			}
+		case strings.HasPrefix(arg, "--sort-services="):
+			if err := setServiceSort(&options, strings.TrimPrefix(arg, "--sort-services=")); err != nil {
 				return analyzeOptions{}, err
 			}
 		case arg == "--top-services":
@@ -685,6 +700,17 @@ func setOutputPath(options *analyzeOptions, value string) error {
 	return nil
 }
 
+func setServiceSort(options *analyzeOptions, value string) error {
+	value = strings.ToLower(strings.TrimSpace(value))
+	switch value {
+	case "cost", "name":
+		options.serviceSort = value
+		return nil
+	default:
+		return fmt.Errorf("unsupported --sort-services %q, expected cost or name", value)
+	}
+}
+
 func sampleOutputPath(value string) (string, error) {
 	value = strings.TrimSpace(value)
 	if value == "" {
@@ -713,6 +739,23 @@ func filterServiceSpend(summary report.Summary, minServiceSpend float64) report.
 		}
 	}
 	summary.ServiceSpend = services
+	return summary
+}
+
+func sortServiceSpend(summary report.Summary, serviceSort string) report.Summary {
+	switch serviceSort {
+	case "", "cost":
+		sort.Slice(summary.ServiceSpend, func(i, j int) bool {
+			if summary.ServiceSpend[i].Cost == summary.ServiceSpend[j].Cost {
+				return summary.ServiceSpend[i].Service < summary.ServiceSpend[j].Service
+			}
+			return summary.ServiceSpend[i].Cost > summary.ServiceSpend[j].Cost
+		})
+	case "name":
+		sort.Slice(summary.ServiceSpend, func(i, j int) bool {
+			return summary.ServiceSpend[i].Service < summary.ServiceSpend[j].Service
+		})
+	}
 	return summary
 }
 
@@ -940,6 +983,7 @@ Flags:
   --min-service-spend <amount>         Hide service rows below this spend amount.
   --only-service <service>             Include only this service. Repeatable.
   --output <path>                       Write the report to a file instead of stdout.
+  --sort-services <cost|name>          Sort service rows. Defaults to cost.
   --to <YYYY-MM>                       Include records through this month.
   --total-budget <amount>             Warn when total spend exceeds amount.
   --top-services <count>              Limit service rows in the report.

@@ -472,6 +472,36 @@ func TestAnalyzeHidesServiceRowsBelowMinimumSpend(t *testing.T) {
 	}
 }
 
+func TestAnalyzeSortsServiceRowsByName(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Zeta Service,100,USD
+2026-01-01,Alpha Service,25,USD
+2026-01-01,Beta Service,10,USD
+`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"analyze", "--format=json", "--top-services=2", "--sort-services=name", csvPath}, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
+	}
+	var payload struct {
+		ServiceSpend []struct {
+			Service string `json:"service"`
+		} `json:"service_spend"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &payload); err != nil {
+		t.Fatalf("expected valid JSON, got %v with output %q", err, stdout.String())
+	}
+	if len(payload.ServiceSpend) != 2 {
+		t.Fatalf("expected 2 visible services, got %+v", payload.ServiceSpend)
+	}
+	if payload.ServiceSpend[0].Service != "Alpha Service" || payload.ServiceSpend[1].Service != "Zeta Service" {
+		t.Fatalf("expected top services sorted by name, got %+v", payload.ServiceSpend)
+	}
+}
+
 func TestAnalyzeFiltersMonthRange(t *testing.T) {
 	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
 2026-01-01,Amazon EC2,100,USD
@@ -597,6 +627,20 @@ func TestAnalyzeRejectsInvalidTopServices(t *testing.T) {
 	}
 	if !strings.Contains(stderr.String(), "--top-services must be greater than zero") {
 		t.Fatalf("expected invalid top services error, got %q", stderr.String())
+	}
+}
+
+func TestAnalyzeRejectsInvalidServiceSort(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"analyze", "--sort-services=month", "cost.csv"}, &stdout, &stderr)
+
+	if code != ExitUsageError {
+		t.Fatalf("expected exit code %d, got %d", ExitUsageError, code)
+	}
+	if !strings.Contains(stderr.String(), `unsupported --sort-services "month"`) {
+		t.Fatalf("expected invalid sort error, got %q", stderr.String())
 	}
 }
 

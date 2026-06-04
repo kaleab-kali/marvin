@@ -849,6 +849,36 @@ func TestAnalyzeUsesOutputPathFromConfig(t *testing.T) {
 	}
 }
 
+func TestAnalyzeUsesServiceSortFromConfig(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Zeta Service,100,USD
+2026-01-01,Alpha Service,25,USD
+`)
+	configPath := writeTempFile(t, "marvin.json", `{"format": "json", "sort_services": "name"}`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"analyze", "--config", configPath, csvPath}, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
+	}
+	var payload struct {
+		ServiceSpend []struct {
+			Service string `json:"service"`
+		} `json:"service_spend"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &payload); err != nil {
+		t.Fatalf("expected valid JSON, got %v with output %q", err, stdout.String())
+	}
+	if len(payload.ServiceSpend) != 2 {
+		t.Fatalf("expected 2 services, got %+v", payload.ServiceSpend)
+	}
+	if payload.ServiceSpend[0].Service != "Alpha Service" || payload.ServiceSpend[1].Service != "Zeta Service" {
+		t.Fatalf("expected services sorted by name from config, got %+v", payload.ServiceSpend)
+	}
+}
+
 func TestAnalyzeUsesTopServicesFromConfig(t *testing.T) {
 	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
 2026-01-01,Amazon EC2,100,USD

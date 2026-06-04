@@ -57,6 +57,14 @@
       "pattern": "\\S",
       "description": "Write the report to this file instead of stdout."
     },
+    "sort_services": {
+      "type": "string",
+      "enum": [
+        "cost",
+        "name"
+      ],
+      "description": "Sort service rows."
+    },
     "to_month": {
       "type": "string",
       "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$",

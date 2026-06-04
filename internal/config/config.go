@@ -24,6 +24,7 @@ type warningRulesFile struct {
 	FromMonth          string             `json:"from_month"`
 	MinServiceSpend    float64            `json:"min_service_spend"`
 	OutputPath         *string            `json:"output_path"`
+	SortServices       string             `json:"sort_services"`
 	ToMonth            string             `json:"to_month"`
 	TopServices        int                `json:"top_services"`
 }
@@ -38,6 +39,7 @@ type Settings struct {
 	IncludeServices []string
 	MinServiceSpend float64
 	OutputPath      *string
+	SortServices    string
 	ToMonth         time.Time
 	TopServices     int
 }
@@ -75,6 +77,10 @@ func Load(r io.Reader) (Settings, error) {
 	if err != nil {
 		return Settings{}, err
 	}
+	sortServices, err := serviceSortFromFile(file.SortServices)
+	if err != nil {
+		return Settings{}, err
+	}
 	failOnWarning := optionalBool(file.FailOnWarning)
 	outputPath, err := outputPathFromFile(file.OutputPath)
 	if err != nil {
@@ -102,9 +108,22 @@ func Load(r io.Reader) (Settings, error) {
 		IncludeServices: included,
 		MinServiceSpend: file.MinServiceSpend,
 		OutputPath:      outputPath,
+		SortServices:    sortServices,
 		ToMonth:         toMonth,
 		TopServices:     file.TopServices,
 	}, nil
+}
+
+func serviceSortFromFile(value string) (string, error) {
+	value = strings.ToLower(strings.TrimSpace(value))
+	switch value {
+	case "":
+		return "", nil
+	case "cost", "name":
+		return value, nil
+	default:
+		return "", fmt.Errorf("unsupported sort_services value %q, expected cost or name", value)
+	}
 }
 
 func outputPathFromFile(value *string) (*string, error) {

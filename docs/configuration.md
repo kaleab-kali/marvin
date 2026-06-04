@@ -37,6 +37,7 @@ All fields are optional.
 | `from_month` | string | Include records from this month onward. Format: `YYYY-MM`. |
 | `min_service_spend` | number | Hide service rows below this spend amount. Totals and warnings still use all filtered records. |
 | `output_path` | string | Write the report to this file instead of stdout. |
+| `sort_services` | string | Sort service rows: `cost` or `name`. |
 | `to_month` | string | Include records through this month. Format: `YYYY-MM`. |
 | `top_services` | number | Limit service rows in report output. |
 
@@ -69,6 +70,7 @@ Marvin also validates rules that JSON Schema cannot express, such as requiring
   "growth_limit_percent": 10,
   "from_month": "2026-01",
   "min_service_spend": 10,
+  "sort_services": "cost",
   "to_month": "2026-02",
   "top_services": 10,
   "include_services": [

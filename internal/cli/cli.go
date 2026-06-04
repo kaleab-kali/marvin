@@ -831,6 +831,9 @@ func loadConfig(options *analyzeOptions, path string) error {
 	if settings.OutputPath != nil {
 		options.outputPath = *settings.OutputPath
 	}
+	if settings.SortServices != "" {
+		options.serviceSort = settings.SortServices
+	}
 	options.toMonth = settings.ToMonth
 	options.topServices = settings.TopServices
 	if options.rules.ServiceLimits == nil {
@@ -1046,6 +1049,7 @@ const sampleConfigJSON = `{
   "growth_limit_percent": 10,
   "from_month": "2026-01",
   "min_service_spend": 10,
+  "sort_services": "cost",
   "to_month": "2026-02",
   "top_services": 10,
   "service_budgets": {

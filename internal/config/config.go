@@ -23,6 +23,7 @@ type warningRulesFile struct {
 	IncludeServices    []string           `json:"include_services"`
 	FromMonth          string             `json:"from_month"`
 	MinServiceSpend    float64            `json:"min_service_spend"`
+	OutputPath         *string            `json:"output_path"`
 	ToMonth            string             `json:"to_month"`
 	TopServices        int                `json:"top_services"`
 }
@@ -36,6 +37,7 @@ type Settings struct {
 	IgnoreServices  []string
 	IncludeServices []string
 	MinServiceSpend float64
+	OutputPath      *string
 	ToMonth         time.Time
 	TopServices     int
 }
@@ -74,6 +76,10 @@ func Load(r io.Reader) (Settings, error) {
 		return Settings{}, err
 	}
 	failOnWarning := optionalBool(file.FailOnWarning)
+	outputPath, err := outputPathFromFile(file.OutputPath)
+	if err != nil {
+		return Settings{}, err
+	}
 	fromMonth, err := parseOptionalMonth("from_month", file.FromMonth)
 	if err != nil {
 		return Settings{}, err
@@ -95,9 +101,21 @@ func Load(r io.Reader) (Settings, error) {
 		IgnoreServices:  ignored,
 		IncludeServices: included,
 		MinServiceSpend: file.MinServiceSpend,
+		OutputPath:      outputPath,
 		ToMonth:         toMonth,
 		TopServices:     file.TopServices,
 	}, nil
+}
+
+func outputPathFromFile(value *string) (*string, error) {
+	if value == nil {
+		return nil, nil
+	}
+	path := strings.TrimSpace(*value)
+	if path == "" {
+		return nil, errors.New("output_path must not be empty")
+	}
+	return &path, nil
 }
 
 func currencyFromFile(value string) (string, error) {

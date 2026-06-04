@@ -737,6 +737,9 @@ func loadConfig(options *analyzeOptions, path string) error {
 	options.ignoredServices = settings.IgnoreServices
 	options.includedServices = settings.IncludeServices
 	options.minServiceSpend = settings.MinServiceSpend
+	if settings.OutputPath != nil {
+		options.outputPath = *settings.OutputPath
+	}
 	options.toMonth = settings.ToMonth
 	options.topServices = settings.TopServices
 	if options.rules.ServiceLimits == nil {

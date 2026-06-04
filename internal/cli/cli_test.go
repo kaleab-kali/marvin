@@ -700,6 +700,39 @@ func TestAnalyzeUsesFormatFromConfig(t *testing.T) {
 	}
 }
 
+func TestAnalyzeUsesOutputPathFromConfig(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+`)
+	outputPath := filepath.Join(t.TempDir(), "report.md")
+	configJSON, err := json.Marshal(map[string]string{
+		"format":      "markdown",
+		"output_path": outputPath,
+	})
+	if err != nil {
+		t.Fatalf("marshal config: %v", err)
+	}
+	configPath := writeTempFile(t, "marvin.json", string(configJSON))
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"analyze", "--config", configPath, csvPath}, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("expected empty stdout when output path is configured, got %q", stdout.String())
+	}
+	content, err := os.ReadFile(outputPath)
+	if err != nil {
+		t.Fatalf("expected configured output file to be written: %v", err)
+	}
+	if !strings.Contains(string(content), "# Marvin Cost Report") {
+		t.Fatalf("expected markdown report in configured output file, got:\n%s", string(content))
+	}
+}
+
 func TestAnalyzeUsesTopServicesFromConfig(t *testing.T) {
 	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
 2026-01-01,Amazon EC2,100,USD

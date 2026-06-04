@@ -89,6 +89,12 @@ Limit the service table for large exports:
 marvin analyze --top-services=10 fixtures/sample-cost-explorer.csv
 ```
 
+Sort service rows alphabetically:
+
+```sh
+marvin analyze --sort-services=name fixtures/sample-cost-explorer.csv
+```
+
 Focus on selected services:
 
 ```sh
@@ -188,6 +194,7 @@ Analyze flags:
 --min-service-spend <amount>            Hide service rows below this spend amount.
 --only-service <service>                Include only this service. Repeatable.
 --output <path>                         Write the report to a file instead of stdout.
+--sort-services <cost|name>             Sort service rows. Defaults to cost.
 --to <YYYY-MM>                          Include records through this month.
 --total-budget <amount>                 Warn when total spend exceeds amount.
 --top-services <count>                  Limit service rows in the report.

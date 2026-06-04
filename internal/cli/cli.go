@@ -28,6 +28,7 @@ const (
 var errAnalyzeHelp = errors.New("analyze help requested")
 var errConfigHelp = errors.New("config help requested")
 var errSampleHelp = errors.New("sample help requested")
+var errValidateHelp = errors.New("validate help requested")
 
 type analyzeOptions struct {
 	paths            []string
@@ -67,6 +68,8 @@ func RunWithIO(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return runConfigCommand(args[1:], stdin, stdout, stderr)
 	case "sample":
 		return runSample(args[1:], stdout, stderr)
+	case "validate":
+		return runValidate(args[1:], stdin, stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "unknown command %q\n\n", args[0])
 		printUsage(stderr)
@@ -127,6 +130,27 @@ func runAnalyze(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return ExitWarning
 	}
 
+	return ExitOK
+}
+
+func runValidate(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
+	paths, err := parseValidateArgs(args)
+	if errors.Is(err, errValidateHelp) {
+		printValidateUsage(stdout)
+		return ExitOK
+	}
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return ExitUsageError
+	}
+
+	records, err := readCostRecords(paths, stdin)
+	if err != nil {
+		fmt.Fprintf(stderr, "%v\n", err)
+		return ExitRuntimeError
+	}
+
+	fmt.Fprintf(stdout, "validated %d cost records from %d input(s)\n", len(records), len(paths))
 	return ExitOK
 }
 
@@ -613,6 +637,30 @@ func parseSampleArgs(args []string) (string, error) {
 	return outputPath, nil
 }
 
+func parseValidateArgs(args []string) ([]string, error) {
+	var paths []string
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		switch {
+		case arg == "-h" || arg == "--help":
+			return nil, errValidateHelp
+		case arg == "-":
+			if containsString(paths, "-") {
+				return nil, errors.New("validate accepts standard input only once")
+			}
+			paths = append(paths, arg)
+		case strings.HasPrefix(arg, "-"):
+			return nil, fmt.Errorf("unknown validate flag %q", arg)
+		default:
+			paths = append(paths, arg)
+		}
+	}
+	if len(paths) == 0 {
+		return nil, errors.New("validate requires a Cost Explorer CSV path")
+	}
+	return paths, nil
+}
+
 func writeReport(stdout io.Writer, summary report.Summary, options analyzeOptions) error {
 	switch options.format {
 	case "terminal":
@@ -869,6 +917,7 @@ Usage:
   marvin config sample [flags]
   marvin config validate <marvin.json|->
   marvin sample [flags]
+  marvin validate <cost-explorer.csv|-> [more.csv ...]
   marvin version
   marvin help
 
@@ -928,6 +977,12 @@ func printSampleUsage(w io.Writer) {
 
 Flags:
   --output <path>    Write the sample CSV to a file instead of stdout.
+`)
+}
+
+func printValidateUsage(w io.Writer) {
+	fmt.Fprint(w, `Usage:
+  marvin validate <cost-explorer.csv|-> [more.csv ...]
 `)
 }
 

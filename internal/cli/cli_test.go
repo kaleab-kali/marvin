@@ -108,6 +108,78 @@ func TestSampleRejectsUnexpectedArgument(t *testing.T) {
 	}
 }
 
+func TestValidateAcceptsCostExplorerCSV(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+2026-01-01,Amazon S3,25,USD
+`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"validate", csvPath}, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "validated 2 cost records from 1 input(s)") {
+		t.Fatalf("expected validation success message, got %q", stdout.String())
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("expected empty stderr, got %q", stderr.String())
+	}
+}
+
+func TestValidateAcceptsCostExplorerCSVFromStdin(t *testing.T) {
+	input := strings.NewReader(`Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := RunWithIO([]string{"validate", "-"}, input, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "validated 1 cost records from 1 input(s)") {
+		t.Fatalf("expected validation success message, got %q", stdout.String())
+	}
+}
+
+func TestValidateRejectsInvalidCostExplorerCSV(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Unblended Cost,Currency
+2026-01-01,100,USD
+`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"validate", csvPath}, &stdout, &stderr)
+
+	if code != ExitRuntimeError {
+		t.Fatalf("expected exit code %d, got %d", ExitRuntimeError, code)
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("expected empty stdout, got %q", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), "missing required column(s): service") {
+		t.Fatalf("expected missing service column error, got %q", stderr.String())
+	}
+}
+
+func TestValidateRejectsMissingPath(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"validate"}, &stdout, &stderr)
+
+	if code != ExitUsageError {
+		t.Fatalf("expected exit code %d, got %d", ExitUsageError, code)
+	}
+	if !strings.Contains(stderr.String(), "validate requires a Cost Explorer CSV path") {
+		t.Fatalf("expected missing path error, got %q", stderr.String())
+	}
+}
+
 func TestConfigValidateAcceptsValidConfig(t *testing.T) {
 	configPath := writeTempFile(t, "marvin.json", `{
   "$schema": "https://raw.githubusercontent.com/kaleab-kali/marvin/main/docs/marvin.schema.json",

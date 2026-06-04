@@ -66,6 +66,12 @@ Common supported currency columns include:
 Run:
 
 ```sh
+marvin validate path/to/cost-explorer.csv
+```
+
+Then create a report:
+
+```sh
 marvin analyze path/to/cost-explorer.csv
 ```
 

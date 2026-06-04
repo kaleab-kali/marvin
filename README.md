@@ -71,6 +71,12 @@ marvin sample --output sample-costs.csv
 marvin analyze sample-costs.csv
 ```
 
+Validate a CSV before reporting:
+
+```sh
+marvin validate fixtures/sample-cost-explorer.csv
+```
+
 Run with warning thresholds:
 
 ```sh
@@ -165,6 +171,7 @@ marvin analyze [flags] <cost-explorer.csv|-> [more.csv ...]
 marvin config sample [flags]
 marvin config validate <marvin.json|->
 marvin sample [flags]
+marvin validate <cost-explorer.csv|-> [more.csv ...]
 marvin version
 marvin help
 ```

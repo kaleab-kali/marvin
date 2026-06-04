@@ -9,6 +9,7 @@ Pass at least one CSV path or `-` for standard input:
 
 ```sh
 marvin analyze cost-explorer.csv
+marvin validate cost-explorer.csv
 cat cost-explorer.csv | marvin analyze -
 ```
 
@@ -63,6 +64,7 @@ The config file is not valid JSON or contains an unknown field. Generate a fresh
 starter file and compare it with your config:
 
 ```sh
+marvin validate cost-explorer.csv
 marvin config sample --output marvin.json
 marvin config validate marvin.json
 ```

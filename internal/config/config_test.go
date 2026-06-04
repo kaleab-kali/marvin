@@ -39,6 +39,7 @@ func TestLoadIncludesServiceFilters(t *testing.T) {
   "format": "md",
   "from_month": "2026-01",
   "min_service_spend": 10,
+  "output_path": "report.md",
   "to_month": "2026-02",
   "top_services": 10
 }`)
@@ -73,6 +74,9 @@ func TestLoadIncludesServiceFilters(t *testing.T) {
 	if settings.MinServiceSpend != 10 {
 		t.Fatalf("expected min service spend 10, got %f", settings.MinServiceSpend)
 	}
+	if settings.OutputPath == nil || *settings.OutputPath != "report.md" {
+		t.Fatalf("expected output path report.md, got %+v", settings.OutputPath)
+	}
 	if settings.TopServices != 10 {
 		t.Fatalf("expected top services 10, got %d", settings.TopServices)
 	}
@@ -105,6 +109,16 @@ func TestLoadRejectsEmptyIncludeService(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "include_services contains an empty service name") {
 		t.Fatalf("expected empty include service error, got %v", err)
+	}
+}
+
+func TestLoadRejectsEmptyOutputPath(t *testing.T) {
+	_, err := Load(strings.NewReader(`{"output_path": " "}`))
+	if err == nil {
+		t.Fatal("expected empty output path error")
+	}
+	if !strings.Contains(err.Error(), "output_path must not be empty") {
+		t.Fatalf("expected empty output path error, got %v", err)
 	}
 }
 

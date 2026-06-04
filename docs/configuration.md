@@ -36,6 +36,7 @@ All fields are optional.
 | `ignore_services` | array of strings | Services to exclude from totals, warnings, and report output. |
 | `from_month` | string | Include records from this month onward. Format: `YYYY-MM`. |
 | `min_service_spend` | number | Hide service rows below this spend amount. Totals and warnings still use all filtered records. |
+| `output_path` | string | Write the report to this file instead of stdout. |
 | `to_month` | string | Include records through this month. Format: `YYYY-MM`. |
 | `top_services` | number | Limit service rows in report output. |
 

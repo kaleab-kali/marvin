@@ -40,6 +40,7 @@ func TestLoadIncludesServiceFilters(t *testing.T) {
   "from_month": "2026-01",
   "min_service_spend": 10,
   "output_path": "report.md",
+  "sort_services": "name",
   "to_month": "2026-02",
   "top_services": 10
 }`)
@@ -77,6 +78,9 @@ func TestLoadIncludesServiceFilters(t *testing.T) {
 	if settings.OutputPath == nil || *settings.OutputPath != "report.md" {
 		t.Fatalf("expected output path report.md, got %+v", settings.OutputPath)
 	}
+	if settings.SortServices != "name" {
+		t.Fatalf("expected service sort name, got %q", settings.SortServices)
+	}
 	if settings.TopServices != 10 {
 		t.Fatalf("expected top services 10, got %d", settings.TopServices)
 	}
@@ -109,6 +113,16 @@ func TestLoadRejectsEmptyIncludeService(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "include_services contains an empty service name") {
 		t.Fatalf("expected empty include service error, got %v", err)
+	}
+}
+
+func TestLoadRejectsInvalidServiceSort(t *testing.T) {
+	_, err := Load(strings.NewReader(`{"sort_services": "month"}`))
+	if err == nil {
+		t.Fatal("expected invalid service sort error")
+	}
+	if !strings.Contains(err.Error(), `unsupported sort_services value "month"`) {
+		t.Fatalf("expected invalid service sort error, got %v", err)
 	}
 }
 

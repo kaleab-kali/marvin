@@ -26,6 +26,12 @@ The CSV has headers but no data rows. Re-export the Cost Explorer report with a
 date range that contains spend, or remove filters that exclude every row in the
 AWS export before downloading it.
 
+## `invalid cost`
+
+The cost column must contain finite numeric values. Marvin accepts common
+currency markers such as `$12.34`, `USD 12.34`, and `12.34 USD`, but rejects
+empty, non-numeric, `NaN`, and infinite values.
+
 ## `analyze produced no records after applying filters`
 
 Marvin parsed the CSV, but local filters removed every record. Check:

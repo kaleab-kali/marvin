@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -258,6 +259,9 @@ func parseCostValue(value string) (float64, error) {
 	}
 	if negative {
 		amount = -amount
+	}
+	if math.IsNaN(amount) || math.IsInf(amount, 0) {
+		return 0, errors.New("cost must be finite")
 	}
 
 	return amount, nil

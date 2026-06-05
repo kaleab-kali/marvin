@@ -159,6 +159,72 @@ func TestParseCostValue(t *testing.T) {
 	}
 }
 
+func TestParseCostValueRejectsNonFiniteValues(t *testing.T) {
+	for _, input := range []string{"NaN", "Inf", "+Inf", "-Inf", "USD NaN", "GBP +Inf"} {
+		t.Run(input, func(t *testing.T) {
+			_, err := parseCostValue(input)
+			if err == nil {
+				t.Fatal("expected non-finite cost to be rejected")
+			}
+			if !strings.Contains(err.Error(), "cost must be finite") {
+				t.Fatalf("expected finite cost error, got %v", err)
+			}
+		})
+	}
+}
+
+func FuzzParseCostExplorerCSV(f *testing.F) {
+	for _, seed := range []string{
+		`Start Date,End Date,Service,Unblended Cost,Currency
+2026-01-01,2026-01-31,Amazon EC2,12.34,USD
+`,
+		`Date,Product,Cost
+2026-03,Amazon CloudWatch,42.10
+`,
+		`lineItem/UsageStartDate,lineItem/ProductCode,lineItem/UnblendedCost,lineItem/CurrencyCode
+2026-03-01T00:00:00Z,AmazonEC2,12.3400000000,USD
+`,
+		`Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,NaN,USD
+`,
+		"",
+		",,,\n",
+	} {
+		f.Add(seed)
+	}
+
+	f.Fuzz(func(t *testing.T, input string) {
+		_, _ = ParseCostExplorerCSV(strings.NewReader(input))
+	})
+}
+
+func FuzzParseCostValue(f *testing.F) {
+	for _, seed := range []string{
+		"12.34",
+		"$12.34",
+		"EUR 12.34",
+		"12.34 GBP",
+		"($1,234.5600)",
+		"NaN",
+		"Inf",
+		"USD +Inf",
+		"",
+		"not-a-cost",
+	} {
+		f.Add(seed)
+	}
+
+	f.Fuzz(func(t *testing.T, input string) {
+		value, err := parseCostValue(input)
+		if err != nil {
+			return
+		}
+		if math.IsNaN(value) || math.IsInf(value, 0) {
+			t.Fatalf("expected finite parsed cost, got %f from %q", value, input)
+		}
+	})
+}
+
 func assertRecord(t *testing.T, record Record, service, start, end string, cost float64, currency string) {
 	t.Helper()
 

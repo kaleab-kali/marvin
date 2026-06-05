@@ -180,6 +180,101 @@ func TestValidateRejectsMissingPath(t *testing.T) {
 	}
 }
 
+func TestInspectSummarizesCostExplorerCSV(t *testing.T) {
+	firstCSV := writeTempFile(t, "cost-a.csv", `Start Date,Service,Unblended Cost,Currency
+2026-02-01,Amazon S3,25,GBP
+2026-02-01,Amazon EC2,100,USD
+`)
+	secondCSV := writeTempFile(t, "cost-b.csv", `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,50,USD
+`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"inspect", firstCSV, secondCSV}, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
+	}
+	output := stdout.String()
+	for _, want := range []string{
+		"Marvin Cost Export Inspection",
+		"Inputs:",
+		"Records:",
+		"Month range:",
+		"2026-01 to 2026-02",
+		"Spend by currency",
+		"GBP",
+		"25.00",
+		"USD",
+		"150.00",
+		"Services (2)",
+		"- Amazon EC2",
+		"- Amazon S3",
+	} {
+		if !strings.Contains(output, want) {
+			t.Fatalf("expected inspection output to contain %q, got:\n%s", want, output)
+		}
+	}
+	if strings.Index(output, "GBP") > strings.Index(output, "USD") {
+		t.Fatalf("expected currencies to be sorted alphabetically, got:\n%s", output)
+	}
+	if strings.Index(output, "- Amazon EC2") > strings.Index(output, "- Amazon S3") {
+		t.Fatalf("expected services to be sorted alphabetically, got:\n%s", output)
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("expected empty stderr, got %q", stderr.String())
+	}
+}
+
+func TestInspectAcceptsCostExplorerCSVFromStdin(t *testing.T) {
+	input := strings.NewReader(`Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := RunWithIO([]string{"inspect", "-"}, input, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
+	}
+	output := stdout.String()
+	for _, want := range []string{
+		"Inputs:",
+		"Records:",
+		"Month range:",
+		"2026-01 to 2026-01",
+		"USD",
+		"100.00",
+		"- Amazon EC2",
+	} {
+		if !strings.Contains(output, want) {
+			t.Fatalf("expected inspection output to contain %q, got:\n%s", want, output)
+		}
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("expected empty stderr, got %q", stderr.String())
+	}
+}
+
+func TestInspectRejectsMissingPath(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"inspect"}, &stdout, &stderr)
+
+	if code != ExitUsageError {
+		t.Fatalf("expected exit code %d, got %d", ExitUsageError, code)
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("expected empty stdout, got %q", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), "inspect requires a Cost Explorer CSV path") {
+		t.Fatalf("expected missing path error, got %q", stderr.String())
+	}
+}
+
 func TestConfigValidateAcceptsValidConfig(t *testing.T) {
 	configPath := writeTempFile(t, "marvin.json", `{
   "$schema": "https://raw.githubusercontent.com/kaleab-kali/marvin/main/docs/marvin.schema.json",

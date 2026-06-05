@@ -40,6 +40,13 @@ The `analyze` command follows this flow:
 Record filters affect totals and warnings. Report-row presentation options only
 affect rows shown in the service section.
 
+## Inspection And Validation
+
+The `validate` and `inspect` commands share the same CSV reader as `analyze` so
+they catch parser issues before users run reports. `validate` only confirms that
+inputs can be parsed. `inspect` prints record count, month range, spend by
+currency, and the parsed service list without applying report filters.
+
 ## Config Loading
 
 Config files are JSON and are loaded by `internal/config`. Unknown fields are

@@ -165,6 +165,7 @@ marvin config sample | marvin config validate -
 ```
 
 See `docs/configuration.md` for the full config schema.
+See `docs/report-formats.md` for report output fields and CSV columns.
 
 ## Handling Private Billing Data
 

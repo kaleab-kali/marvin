@@ -20,3 +20,8 @@ Include:
 
 Marvin has not reached a stable release yet. Security fixes will target the
 current `main` branch until versioned releases begin.
+
+## Automated Checks
+
+Pull requests and `main` branch updates run Go CI, race-detector tests, and
+CodeQL analysis. CodeQL also runs weekly on the default branch.

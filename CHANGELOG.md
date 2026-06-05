@@ -9,6 +9,7 @@ semantic versioning after the first tagged release.
 
 ### Added
 
+- Installation and checksum verification documentation.
 - Report format reference documentation.
 - GitHub Release publication for tagged release artifacts.
 - Benchmarks for CSV parsing and report summary writing.

@@ -49,6 +49,15 @@ rejected so totals are not accidentally combined across currencies.
 
 ## Quickstart
 
+Install Marvin from a release binary or source build:
+
+```sh
+go build -o bin/marvin ./cmd/marvin
+```
+
+For release binaries, checksum verification, and PATH setup, see
+[`docs/install.md`](docs/install.md).
+
 Run the sample report:
 
 ```sh
@@ -282,6 +291,8 @@ Versioned release builds are produced by GitHub Actions when a tag matching
 `v*.*.*` is pushed. The release workflow builds Linux, macOS, and Windows
 binaries, injects the tag into `marvin version`, uploads SHA-256 checksums with
 each artifact, and attaches the binaries and checksums to the GitHub Release.
+For install steps and checksum verification, see
+[`docs/install.md`](docs/install.md).
 
 ## License
 

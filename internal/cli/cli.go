@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"text/tabwriter"
 	"time"
 
 	"github.com/kaleab-kali/marvin/internal/config"
@@ -27,6 +28,7 @@ const (
 
 var errAnalyzeHelp = errors.New("analyze help requested")
 var errConfigHelp = errors.New("config help requested")
+var errInspectHelp = errors.New("inspect help requested")
 var errSampleHelp = errors.New("sample help requested")
 var errValidateHelp = errors.New("validate help requested")
 
@@ -67,6 +69,8 @@ func RunWithIO(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return runAnalyze(args[1:], stdin, stdout, stderr)
 	case "config":
 		return runConfigCommand(args[1:], stdin, stdout, stderr)
+	case "inspect":
+		return runInspect(args[1:], stdin, stdout, stderr)
 	case "sample":
 		return runSample(args[1:], stdout, stderr)
 	case "validate":
@@ -130,6 +134,31 @@ func runAnalyze(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 
 	if options.failOnWarning && len(summary.Warnings) > 0 {
 		return ExitWarning
+	}
+
+	return ExitOK
+}
+
+func runInspect(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
+	paths, err := parseInspectArgs(args)
+	if errors.Is(err, errInspectHelp) {
+		printInspectUsage(stdout)
+		return ExitOK
+	}
+	if err != nil {
+		fmt.Fprintln(stderr, err)
+		return ExitUsageError
+	}
+
+	records, err := readCostRecords(paths, stdin)
+	if err != nil {
+		fmt.Fprintf(stderr, "%v\n", err)
+		return ExitRuntimeError
+	}
+
+	if err := writeInspection(stdout, records, len(paths)); err != nil {
+		fmt.Fprintf(stderr, "write inspection: %v\n", err)
+		return ExitRuntimeError
 	}
 
 	return ExitOK
@@ -561,6 +590,30 @@ func parseAnalyzeArgs(args []string) (analyzeOptions, error) {
 	return options, nil
 }
 
+func parseInspectArgs(args []string) ([]string, error) {
+	var paths []string
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		switch {
+		case arg == "-h" || arg == "--help":
+			return nil, errInspectHelp
+		case arg == "-":
+			if containsString(paths, "-") {
+				return nil, errors.New("inspect accepts standard input only once")
+			}
+			paths = append(paths, arg)
+		case strings.HasPrefix(arg, "-"):
+			return nil, fmt.Errorf("unknown inspect flag %q", arg)
+		default:
+			paths = append(paths, arg)
+		}
+	}
+	if len(paths) == 0 {
+		return nil, errors.New("inspect requires a Cost Explorer CSV path")
+	}
+	return paths, nil
+}
+
 func parseConfigSampleArgs(args []string) (string, error) {
 	var outputPath string
 	for i := 0; i < len(args); i++ {
@@ -689,6 +742,72 @@ func writeReport(stdout io.Writer, summary report.Summary, options analyzeOption
 	default:
 		return fmt.Errorf("unsupported report format %q", options.format)
 	}
+}
+
+type currencySpend struct {
+	Currency string
+	Cost     float64
+}
+
+func writeInspection(stdout io.Writer, records []cost.Record, inputCount int) error {
+	services := make(map[string]bool)
+	currencyTotals := make(map[string]float64)
+	var firstMonth time.Time
+	var lastMonth time.Time
+
+	for _, record := range records {
+		services[record.Service] = true
+		currency := normalizeCurrency(record.Currency)
+		currencyTotals[currency] += record.Cost
+
+		month := cost.Month(record.StartDate)
+		if firstMonth.IsZero() || month.Before(firstMonth) {
+			firstMonth = month
+		}
+		if lastMonth.IsZero() || month.After(lastMonth) {
+			lastMonth = month
+		}
+	}
+
+	serviceNames := make([]string, 0, len(services))
+	for service := range services {
+		serviceNames = append(serviceNames, service)
+	}
+	sort.Strings(serviceNames)
+
+	spendByCurrency := make([]currencySpend, 0, len(currencyTotals))
+	for currency, total := range currencyTotals {
+		spendByCurrency = append(spendByCurrency, currencySpend{
+			Currency: currency,
+			Cost:     total,
+		})
+	}
+	sort.Slice(spendByCurrency, func(i, j int) bool {
+		return spendByCurrency[i].Currency < spendByCurrency[j].Currency
+	})
+
+	tabbed := tabwriter.NewWriter(stdout, 0, 0, 2, ' ', 0)
+	fmt.Fprintln(tabbed, "Marvin Cost Export Inspection")
+	fmt.Fprintf(tabbed, "Inputs:\t%d\n", inputCount)
+	fmt.Fprintf(tabbed, "Records:\t%d\n", len(records))
+	if !firstMonth.IsZero() {
+		fmt.Fprintf(tabbed, "Month range:\t%s to %s\n", firstMonth.Format("2006-01"), lastMonth.Format("2006-01"))
+	}
+
+	fmt.Fprintln(tabbed)
+	fmt.Fprintln(tabbed, "Spend by currency")
+	fmt.Fprintln(tabbed, "Currency\tCost")
+	for _, spend := range spendByCurrency {
+		fmt.Fprintf(tabbed, "%s\t%.2f\n", spend.Currency, spend.Cost)
+	}
+
+	fmt.Fprintln(tabbed)
+	fmt.Fprintf(tabbed, "Services (%d)\n", len(serviceNames))
+	for _, service := range serviceNames {
+		fmt.Fprintf(tabbed, "- %s\n", service)
+	}
+
+	return tabbed.Flush()
 }
 
 func setOutputPath(options *analyzeOptions, value string) error {
@@ -962,6 +1081,7 @@ Usage:
   marvin analyze [flags] <cost-explorer.csv|-> [more.csv ...]
   marvin config sample [flags]
   marvin config validate <marvin.json|->
+  marvin inspect <cost-explorer.csv|-> [more.csv ...]
   marvin sample [flags]
   marvin validate <cost-explorer.csv|-> [more.csv ...]
   marvin version
@@ -1015,6 +1135,12 @@ Flags:
 func printConfigValidateUsage(w io.Writer) {
 	fmt.Fprint(w, `Usage:
   marvin config validate <marvin.json|->
+`)
+}
+
+func printInspectUsage(w io.Writer) {
+	fmt.Fprint(w, `Usage:
+  marvin inspect <cost-explorer.csv|-> [more.csv ...]
 `)
 }
 

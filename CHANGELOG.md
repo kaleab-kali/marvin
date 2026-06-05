@@ -9,6 +9,7 @@ semantic versioning after the first tagged release.
 
 ### Added
 
+- Cost Explorer CSV inspection with `marvin inspect`.
 - Include-service filtering with `marvin analyze --only-service`.
 - `include_services` config setting for reusable service include filters.
 - JSON Schema for `marvin.json` config files.

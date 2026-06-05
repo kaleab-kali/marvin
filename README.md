@@ -10,16 +10,17 @@ cloud access, and no hidden state required for the first release.
 
 ## Status
 
-Marvin is in CSV MVP development. It can analyze exported AWS Cost Explorer CSV
-files locally and produce terminal, Markdown, or JSON reports.
+Marvin is in CSV MVP development. It can inspect and analyze exported AWS Cost
+Explorer CSV files locally and produce terminal, Markdown, JSON, or CSV reports.
 
 The current CLI supports:
 
 - Importing AWS Cost Explorer CSV files.
+- Inspecting export contents before running reports.
 - Grouping spend by service and month.
 - Showing month-over-month changes.
 - Emitting budget, service, and growth warnings from command-line thresholds.
-- Producing terminal, Markdown, and JSON reports.
+- Producing terminal, Markdown, JSON, and CSV reports.
 - Generating a small sample CSV for local testing.
 
 Live AWS API access, scheduled reports, Slack/email notifications, and anomaly
@@ -35,7 +36,7 @@ billing data easier to inspect by answering practical questions:
 - What changed compared with last month?
 - Did total spend cross a budget?
 - Did one service grow unusually fast?
-- Can the report be saved and shared as Markdown or JSON?
+- Can the report be saved and shared as Markdown, JSON, or CSV?
 
 Marvin is not intended to replace AWS Cost Explorer. It is a small local tool for
 turning exported data into repeatable reports that are easy to review in a
@@ -75,6 +76,12 @@ Validate a CSV before reporting:
 
 ```sh
 marvin validate fixtures/sample-cost-explorer.csv
+```
+
+Inspect a CSV before reporting:
+
+```sh
+marvin inspect fixtures/sample-cost-explorer.csv
 ```
 
 Run with warning thresholds:
@@ -177,6 +184,7 @@ For common errors and fixes, see
 marvin analyze [flags] <cost-explorer.csv|-> [more.csv ...]
 marvin config sample [flags]
 marvin config validate <marvin.json|->
+marvin inspect <cost-explorer.csv|-> [more.csv ...]
 marvin sample [flags]
 marvin validate <cost-explorer.csv|-> [more.csv ...]
 marvin version

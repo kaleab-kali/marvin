@@ -69,6 +69,13 @@ Run:
 marvin validate path/to/cost-explorer.csv
 ```
 
+Inspect parsed months, currencies, services, and currency totals before choosing
+analysis filters:
+
+```sh
+marvin inspect path/to/cost-explorer.csv
+```
+
 Then create a report:
 
 ```sh

@@ -20,6 +20,12 @@ go vet ./...
 go build ./cmd/marvin
 ```
 
+Run benchmarks when changing parser, aggregation, or report code:
+
+```sh
+go test '-bench=.' ./internal/cost ./internal/report
+```
+
 ## Pull Requests
 
 Keep pull requests focused and reviewable:

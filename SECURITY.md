@@ -24,4 +24,5 @@ current `main` branch until versioned releases begin.
 ## Automated Checks
 
 Pull requests and `main` branch updates run Go CI, race-detector tests, and
-CodeQL analysis. CodeQL also runs weekly on the default branch.
+CodeQL analysis. CodeQL also runs weekly on the default branch. Dependabot
+monitors GitHub Actions and Go module updates weekly.

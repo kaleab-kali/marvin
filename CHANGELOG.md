@@ -9,6 +9,7 @@ semantic versioning after the first tagged release.
 
 ### Added
 
+- Dependabot update monitoring for GitHub Actions and Go modules.
 - CodeQL security analysis workflow.
 - Installation and checksum verification documentation.
 - Report format reference documentation.

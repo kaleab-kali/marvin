@@ -93,6 +93,7 @@ Inspect a CSV before reporting:
 
 ```sh
 marvin inspect fixtures/sample-cost-explorer.csv
+marvin inspect --format json fixtures/sample-cost-explorer.csv
 ```
 
 Run with warning thresholds:
@@ -222,6 +223,12 @@ Analyze flags:
 --top-services <count>                  Limit service rows in the report.
 --service-budget <service=amount>       Warn when service spend exceeds amount. Repeatable.
 --growth-limit-percent <percent>        Warn when month-over-month growth exceeds percent.
+```
+
+Inspect flags:
+
+```text
+--format <terminal|json>                Output format. Defaults to terminal. Alias: text.
 ```
 
 Sample flags:

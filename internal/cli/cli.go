@@ -2,9 +2,11 @@ package cli
 
 import (
 	"compress/gzip"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"sort"
 	"strconv"
@@ -46,6 +48,11 @@ type analyzeOptions struct {
 	toMonth          time.Time
 	topServices      int
 	rules            cost.WarningRules
+}
+
+type inspectOptions struct {
+	format string
+	paths  []string
 }
 
 func Run(args []string, stdout, stderr io.Writer) int {
@@ -140,7 +147,7 @@ func runAnalyze(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 }
 
 func runInspect(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
-	paths, err := parseInspectArgs(args)
+	options, err := parseInspectArgs(args)
 	if errors.Is(err, errInspectHelp) {
 		printInspectUsage(stdout)
 		return ExitOK
@@ -150,13 +157,14 @@ func runInspect(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return ExitUsageError
 	}
 
-	records, err := readCostRecords(paths, stdin)
+	records, err := readCostRecords(options.paths, stdin)
 	if err != nil {
 		fmt.Fprintf(stderr, "%v\n", err)
 		return ExitRuntimeError
 	}
 
-	if err := writeInspection(stdout, records, len(paths)); err != nil {
+	summary := buildInspection(records, len(options.paths))
+	if err := writeInspection(stdout, summary, options.format); err != nil {
 		fmt.Fprintf(stderr, "write inspection: %v\n", err)
 		return ExitRuntimeError
 	}
@@ -590,28 +598,40 @@ func parseAnalyzeArgs(args []string) (analyzeOptions, error) {
 	return options, nil
 }
 
-func parseInspectArgs(args []string) ([]string, error) {
-	var paths []string
+func parseInspectArgs(args []string) (inspectOptions, error) {
+	options := inspectOptions{format: "terminal"}
 	for i := 0; i < len(args); i++ {
 		arg := args[i]
 		switch {
 		case arg == "-h" || arg == "--help":
-			return nil, errInspectHelp
-		case arg == "-":
-			if containsString(paths, "-") {
-				return nil, errors.New("inspect accepts standard input only once")
+			return inspectOptions{}, errInspectHelp
+		case arg == "--format":
+			value, ok := nextArg(args, &i)
+			if !ok {
+				return inspectOptions{}, errors.New("--format requires terminal or json")
 			}
-			paths = append(paths, arg)
+			if err := setInspectFormat(&options, value); err != nil {
+				return inspectOptions{}, err
+			}
+		case strings.HasPrefix(arg, "--format="):
+			if err := setInspectFormat(&options, strings.TrimPrefix(arg, "--format=")); err != nil {
+				return inspectOptions{}, err
+			}
+		case arg == "-":
+			if containsString(options.paths, "-") {
+				return inspectOptions{}, errors.New("inspect accepts standard input only once")
+			}
+			options.paths = append(options.paths, arg)
 		case strings.HasPrefix(arg, "-"):
-			return nil, fmt.Errorf("unknown inspect flag %q", arg)
+			return inspectOptions{}, fmt.Errorf("unknown inspect flag %q", arg)
 		default:
-			paths = append(paths, arg)
+			options.paths = append(options.paths, arg)
 		}
 	}
-	if len(paths) == 0 {
-		return nil, errors.New("inspect requires a Cost Explorer CSV path")
+	if len(options.paths) == 0 {
+		return inspectOptions{}, errors.New("inspect requires a Cost Explorer CSV path")
 	}
-	return paths, nil
+	return options, nil
 }
 
 func parseConfigSampleArgs(args []string) (string, error) {
@@ -745,11 +765,20 @@ func writeReport(stdout io.Writer, summary report.Summary, options analyzeOption
 }
 
 type currencySpend struct {
-	Currency string
-	Cost     float64
+	Currency string  `json:"currency"`
+	Cost     float64 `json:"cost"`
 }
 
-func writeInspection(stdout io.Writer, records []cost.Record, inputCount int) error {
+type inspectionSummary struct {
+	InputCount    int             `json:"input_count"`
+	RecordCount   int             `json:"record_count"`
+	FirstMonth    string          `json:"first_month"`
+	LastMonth     string          `json:"last_month"`
+	CurrencySpend []currencySpend `json:"currency_spend"`
+	Services      []string        `json:"services"`
+}
+
+func buildInspection(records []cost.Record, inputCount int) inspectionSummary {
 	services := make(map[string]bool)
 	currencyTotals := make(map[string]float64)
 	var firstMonth time.Time
@@ -779,35 +808,70 @@ func writeInspection(stdout io.Writer, records []cost.Record, inputCount int) er
 	for currency, total := range currencyTotals {
 		spendByCurrency = append(spendByCurrency, currencySpend{
 			Currency: currency,
-			Cost:     total,
+			Cost:     roundMoney(total),
 		})
 	}
 	sort.Slice(spendByCurrency, func(i, j int) bool {
 		return spendByCurrency[i].Currency < spendByCurrency[j].Currency
 	})
 
+	summary := inspectionSummary{
+		InputCount:    inputCount,
+		RecordCount:   len(records),
+		CurrencySpend: spendByCurrency,
+		Services:      serviceNames,
+	}
+	if !firstMonth.IsZero() {
+		summary.FirstMonth = firstMonth.Format("2006-01")
+		summary.LastMonth = lastMonth.Format("2006-01")
+	}
+	return summary
+}
+
+func writeInspection(stdout io.Writer, summary inspectionSummary, format string) error {
+	switch format {
+	case "terminal":
+		return writeTerminalInspection(stdout, summary)
+	case "json":
+		return writeJSONInspection(stdout, summary)
+	default:
+		return fmt.Errorf("unsupported inspection format %q", format)
+	}
+}
+
+func writeTerminalInspection(stdout io.Writer, summary inspectionSummary) error {
 	tabbed := tabwriter.NewWriter(stdout, 0, 0, 2, ' ', 0)
 	fmt.Fprintln(tabbed, "Marvin Cost Export Inspection")
-	fmt.Fprintf(tabbed, "Inputs:\t%d\n", inputCount)
-	fmt.Fprintf(tabbed, "Records:\t%d\n", len(records))
-	if !firstMonth.IsZero() {
-		fmt.Fprintf(tabbed, "Month range:\t%s to %s\n", firstMonth.Format("2006-01"), lastMonth.Format("2006-01"))
+	fmt.Fprintf(tabbed, "Inputs:\t%d\n", summary.InputCount)
+	fmt.Fprintf(tabbed, "Records:\t%d\n", summary.RecordCount)
+	if summary.FirstMonth != "" {
+		fmt.Fprintf(tabbed, "Month range:\t%s to %s\n", summary.FirstMonth, summary.LastMonth)
 	}
 
 	fmt.Fprintln(tabbed)
 	fmt.Fprintln(tabbed, "Spend by currency")
 	fmt.Fprintln(tabbed, "Currency\tCost")
-	for _, spend := range spendByCurrency {
+	for _, spend := range summary.CurrencySpend {
 		fmt.Fprintf(tabbed, "%s\t%.2f\n", spend.Currency, spend.Cost)
 	}
 
 	fmt.Fprintln(tabbed)
-	fmt.Fprintf(tabbed, "Services (%d)\n", len(serviceNames))
-	for _, service := range serviceNames {
+	fmt.Fprintf(tabbed, "Services (%d)\n", len(summary.Services))
+	for _, service := range summary.Services {
 		fmt.Fprintf(tabbed, "- %s\n", service)
 	}
 
 	return tabbed.Flush()
+}
+
+func writeJSONInspection(stdout io.Writer, summary inspectionSummary) error {
+	encoder := json.NewEncoder(stdout)
+	encoder.SetIndent("", "  ")
+	return encoder.Encode(summary)
+}
+
+func roundMoney(value float64) float64 {
+	return math.Round(value*100) / 100
 }
 
 func setOutputPath(options *analyzeOptions, value string) error {
@@ -999,6 +1063,20 @@ func setReportFormat(options *analyzeOptions, value string) error {
 	}
 }
 
+func setInspectFormat(options *inspectOptions, value string) error {
+	value = strings.ToLower(strings.TrimSpace(value))
+	switch value {
+	case "terminal", "text":
+		options.format = "terminal"
+		return nil
+	case "json":
+		options.format = "json"
+		return nil
+	default:
+		return fmt.Errorf("unsupported --format %q, expected terminal, text, or json", value)
+	}
+}
+
 func containsString(values []string, want string) bool {
 	for _, value := range values {
 		if value == want {
@@ -1141,6 +1219,9 @@ func printConfigValidateUsage(w io.Writer) {
 func printInspectUsage(w io.Writer) {
 	fmt.Fprint(w, `Usage:
   marvin inspect <cost-explorer.csv|-> [more.csv ...]
+
+Flags:
+  --format <terminal|json> Output format. Defaults to terminal. Alias: text.
 `)
 }
 

@@ -59,9 +59,10 @@ enforces rules that JSON Schema cannot express, such as month range ordering.
 
 ## Reporting
 
-`internal/report` uses a shared `Summary` type for all output formats. Terminal
-and Markdown formats are optimized for people. JSON and CSV formats are intended
-for automation and spreadsheet workflows.
+`internal/report` uses a shared `Summary` type for all output formats. It
+derives service share percentages from total spend once, then every writer uses
+the same values. Terminal and Markdown formats are optimized for people. JSON
+and CSV formats are intended for automation and spreadsheet workflows.
 
 Report writers should not read files, parse CLI flags, or apply record filters.
 Those responsibilities stay in `internal/cli` and `internal/cost`.

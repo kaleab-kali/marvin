@@ -28,10 +28,10 @@ func TestWriteCSV(t *testing.T) {
 	if got, want := rows[0][0], "section"; got != want {
 		t.Fatalf("expected header %q, got %q", want, got)
 	}
-	if !hasCSVRow(rows, "total", "", "", "", "USD", "250.00", "", "", "", "", "", "", "") {
+	if !hasCSVRow(rows, "total", "", "", "", "USD", "250.00", "", "", "", "", "", "", "", "") {
 		t.Fatalf("expected total row, got %+v", rows)
 	}
-	if !hasCSVRow(rows, "warning", "", "", "", "USD", "", "", "", "", "total_budget", "200.00", "250.00", "") {
+	if !hasCSVRow(rows, "warning", "", "", "", "USD", "", "", "", "", "", "total_budget", "200.00", "250.00", "") {
 		t.Fatalf("expected total budget warning row, got %+v", rows)
 	}
 }

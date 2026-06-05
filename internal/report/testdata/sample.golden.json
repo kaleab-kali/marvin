@@ -24,7 +24,8 @@
   "service_spend": [
     {
       "service": "Amazon EC2",
-      "cost": 250
+      "cost": 250,
+      "share_percent": 100
     }
   ]
 }

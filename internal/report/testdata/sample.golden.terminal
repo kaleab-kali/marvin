@@ -11,8 +11,8 @@ Month    Previous  Current  Change   Change %
 2026-02  $100.00   $150.00  +$50.00  +50.00%
 
 Service spend
-Service     Cost
-Amazon EC2  $250.00
+Service     Cost     Share
+Amazon EC2  $250.00  100.00%
 
 Warnings
 None

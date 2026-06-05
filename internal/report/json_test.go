@@ -28,6 +28,9 @@ func TestWriteJSON(t *testing.T) {
 	if len(summary.ServiceSpend) != 1 || summary.ServiceSpend[0].Service != "Amazon EC2" {
 		t.Fatalf("expected Amazon EC2 service spend, got %+v", summary.ServiceSpend)
 	}
+	if summary.ServiceSpend[0].SharePercent != 100 {
+		t.Fatalf("expected service share percent 100, got %f", summary.ServiceSpend[0].SharePercent)
+	}
 }
 
 func TestWriteJSONSummary(t *testing.T) {

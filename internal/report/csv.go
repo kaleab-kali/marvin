@@ -22,6 +22,7 @@ func WriteCSVSummary(w io.Writer, summary Summary) error {
 		"service",
 		"currency",
 		"cost",
+		"share_percent",
 		"previous_cost",
 		"change",
 		"change_percent",
@@ -33,11 +34,11 @@ func WriteCSVSummary(w io.Writer, summary Summary) error {
 		return err
 	}
 
-	if err := writer.Write([]string{"total", "", "", "", summary.Currency, formatCSVNumber(summary.TotalSpend), "", "", "", "", "", "", ""}); err != nil {
+	if err := writer.Write([]string{"total", "", "", "", summary.Currency, formatCSVNumber(summary.TotalSpend), "", "", "", "", "", "", "", ""}); err != nil {
 		return err
 	}
 	for _, month := range summary.MonthlySpend {
-		if err := writer.Write([]string{"monthly_spend", month.Month, "", "", summary.Currency, formatCSVNumber(month.Cost), "", "", "", "", "", "", ""}); err != nil {
+		if err := writer.Write([]string{"monthly_spend", month.Month, "", "", summary.Currency, formatCSVNumber(month.Cost), "", "", "", "", "", "", "", ""}); err != nil {
 			return err
 		}
 	}
@@ -49,6 +50,7 @@ func WriteCSVSummary(w io.Writer, summary Summary) error {
 			"",
 			summary.Currency,
 			formatCSVNumber(comparison.Cost),
+			"",
 			formatCSVNumber(comparison.PreviousCost),
 			formatCSVNumber(comparison.Change),
 			formatCSVNumber(comparison.ChangePercent),
@@ -61,7 +63,7 @@ func WriteCSVSummary(w io.Writer, summary Summary) error {
 		}
 	}
 	for _, service := range summary.ServiceSpend {
-		if err := writer.Write([]string{"service_spend", "", "", service.Service, summary.Currency, formatCSVNumber(service.Cost), "", "", "", "", "", "", ""}); err != nil {
+		if err := writer.Write([]string{"service_spend", "", "", service.Service, summary.Currency, formatCSVNumber(service.Cost), formatCSVNumber(service.SharePercent), "", "", "", "", "", "", ""}); err != nil {
 			return err
 		}
 	}
@@ -90,6 +92,7 @@ func csvWarningRow(currency string, warning Warning) []string {
 		"",
 		"",
 		"",
+		"",
 		warning.Type,
 		"",
 		"",
@@ -98,14 +101,14 @@ func csvWarningRow(currency string, warning Warning) []string {
 
 	switch warning.Type {
 	case string(cost.WarningTotalBudget), string(cost.WarningServiceBudget):
-		row[10] = formatCSVNumber(warning.Limit)
-		row[11] = formatCSVNumber(warning.Actual)
+		row[11] = formatCSVNumber(warning.Limit)
+		row[12] = formatCSVNumber(warning.Actual)
 	case string(cost.WarningGrowth):
-		row[7] = formatCSVNumber(warning.Change)
-		row[8] = formatCSVNumber(warning.ChangePercent)
-		row[10] = formatCSVNumber(warning.Limit)
-		row[11] = formatCSVNumber(warning.Actual)
-		row[12] = formatCSVNumber(warning.Previous)
+		row[8] = formatCSVNumber(warning.Change)
+		row[9] = formatCSVNumber(warning.ChangePercent)
+		row[11] = formatCSVNumber(warning.Limit)
+		row[12] = formatCSVNumber(warning.Actual)
+		row[13] = formatCSVNumber(warning.Previous)
 	}
 
 	return row

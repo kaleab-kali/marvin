@@ -9,6 +9,7 @@ semantic versioning after the first tagged release.
 
 ### Added
 
+- Service spend share percentages in terminal, Markdown, JSON, and CSV reports.
 - Fuzz seed coverage for Cost Explorer CSV and cost value parsing.
 - Cost Explorer CSV inspection with `marvin inspect`.
 - Include-service filtering with `marvin analyze --only-service`.

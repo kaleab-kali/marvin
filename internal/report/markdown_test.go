@@ -22,7 +22,7 @@ func TestWriteMarkdown(t *testing.T) {
 	for _, want := range []string{
 		"# Marvin Cost Report",
 		"Total spend: **$100.00**",
-		"| Amazon EC2 | $100.00 |",
+		"| Amazon EC2 | $100.00 | 100.00% |",
 		"None.",
 	} {
 		if !strings.Contains(text, want) {

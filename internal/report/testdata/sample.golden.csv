@@ -1,6 +1,6 @@
-section,month,previous_month,service,currency,cost,previous_cost,change,change_percent,warning_type,limit,actual,previous
-total,,,,USD,250.00,,,,,,,
-monthly_spend,2026-01,,,USD,100.00,,,,,,,
-monthly_spend,2026-02,,,USD,150.00,,,,,,,
-month_over_month,2026-02,2026-01,,USD,150.00,100.00,50.00,50.00,,,,
-service_spend,,,Amazon EC2,USD,250.00,,,,,,,
+section,month,previous_month,service,currency,cost,share_percent,previous_cost,change,change_percent,warning_type,limit,actual,previous
+total,,,,USD,250.00,,,,,,,,
+monthly_spend,2026-01,,,USD,100.00,,,,,,,,
+monthly_spend,2026-02,,,USD,150.00,,,,,,,,
+month_over_month,2026-02,2026-01,,USD,150.00,,100.00,50.00,50.00,,,,
+service_spend,,,Amazon EC2,USD,250.00,100.00,,,,,,,

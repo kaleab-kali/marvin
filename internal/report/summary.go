@@ -31,8 +31,9 @@ type MonthComparison struct {
 }
 
 type ServiceSpend struct {
-	Service string  `json:"service"`
-	Cost    float64 `json:"cost"`
+	Service      string  `json:"service"`
+	Cost         float64 `json:"cost"`
+	SharePercent float64 `json:"share_percent"`
 }
 
 type Warning struct {
@@ -58,7 +59,7 @@ func BuildSummary(records []cost.Record, rules cost.WarningRules) Summary {
 		Currency:       summarizeCurrency(records),
 		MonthlySpend:   summarizeMonths(months),
 		MonthOverMonth: summarizeComparisons(comparisons),
-		ServiceSpend:   summarizeServices(services),
+		ServiceSpend:   summarizeServices(services, total),
 		Warnings:       summarizeWarnings(warnings),
 	}
 }
@@ -89,15 +90,23 @@ func summarizeComparisons(comparisons []cost.MonthComparison) []MonthComparison 
 	return summary
 }
 
-func summarizeServices(services []cost.ServiceTotal) []ServiceSpend {
+func summarizeServices(services []cost.ServiceTotal, total float64) []ServiceSpend {
 	summary := make([]ServiceSpend, 0, len(services))
 	for _, service := range services {
 		summary = append(summary, ServiceSpend{
-			Service: service.Service,
-			Cost:    round(service.Cost, 2),
+			Service:      service.Service,
+			Cost:         round(service.Cost, 2),
+			SharePercent: serviceSharePercent(service.Cost, total),
 		})
 	}
 	return summary
+}
+
+func serviceSharePercent(serviceCost, total float64) float64 {
+	if total == 0 {
+		return 0
+	}
+	return round(serviceCost/total*100, 2)
 }
 
 func summarizeCurrency(records []cost.Record) string {

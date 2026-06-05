@@ -906,7 +906,7 @@ func TestAnalyzeUsesFormatFromConfig(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected valid CSV from configured format, got %v with output:\n%s", err, stdout.String())
 	}
-	if !hasCSVRow(rows, "service_spend", "", "", "Amazon EC2", "USD", "100.00", "", "", "", "", "", "", "") {
+	if !hasCSVRow(rows, "service_spend", "", "", "Amazon EC2", "USD", "100.00", "100.00", "", "", "", "", "", "", "") {
 		t.Fatalf("expected CSV report from configured format, got %+v", rows)
 	}
 }
@@ -1183,7 +1183,7 @@ func TestAnalyzeWritesMarkdownReport(t *testing.T) {
 	for _, want := range []string{
 		"# Marvin Cost Report",
 		"Total spend: **$100.00**",
-		"| Amazon EC2 | $100.00 |",
+		"| Amazon EC2 | $100.00 | 100.00% |",
 	} {
 		if !strings.Contains(output, want) {
 			t.Fatalf("expected output to contain %q, got:\n%s", want, output)
@@ -1278,7 +1278,7 @@ func TestAnalyzeWritesCSVReport(t *testing.T) {
 	if got, want := rows[0][0], "section"; got != want {
 		t.Fatalf("expected first header %q, got %q", want, got)
 	}
-	if !hasCSVRow(rows, "service_spend", "", "", "Amazon EC2", "USD", "100.00", "", "", "", "", "", "", "") {
+	if !hasCSVRow(rows, "service_spend", "", "", "Amazon EC2", "USD", "100.00", "100.00", "", "", "", "", "", "", "") {
 		t.Fatalf("expected service spend CSV row, got %+v", rows)
 	}
 }

@@ -17,9 +17,9 @@ Total spend: **$250.00**
 
 ## Service Spend
 
-| Service | Cost |
-| --- | ---: |
-| Amazon EC2 | $250.00 |
+| Service | Cost | Share |
+| --- | ---: | ---: |
+| Amazon EC2 | $250.00 | 100.00% |
 
 ## Warnings
 

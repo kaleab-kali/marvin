@@ -43,9 +43,9 @@ func WriteTerminalSummary(w io.Writer, summary Summary) error {
 
 	fmt.Fprintln(tabbed)
 	fmt.Fprintln(tabbed, "Service spend")
-	fmt.Fprintln(tabbed, "Service\tCost")
+	fmt.Fprintln(tabbed, "Service\tCost\tShare")
 	for _, service := range summary.ServiceSpend {
-		fmt.Fprintf(tabbed, "%s\t%s\n", service.Service, formatMoney(service.Cost, summary.Currency))
+		fmt.Fprintf(tabbed, "%s\t%s\t%s\n", service.Service, formatMoney(service.Cost, summary.Currency), formatSharePercent(service.SharePercent))
 	}
 
 	fmt.Fprintln(tabbed)
@@ -101,5 +101,9 @@ func formatPercent(value float64) string {
 	if value > 0 {
 		return fmt.Sprintf("+%.2f%%", value)
 	}
+	return fmt.Sprintf("%.2f%%", value)
+}
+
+func formatSharePercent(value float64) string {
 	return fmt.Sprintf("%.2f%%", value)
 }

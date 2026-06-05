@@ -54,14 +54,14 @@ func WriteMarkdownSummary(w io.Writer, summary Summary) error {
 	if _, err := fmt.Fprint(w, "\n## Service Spend\n\n"); err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintln(w, "| Service | Cost |"); err != nil {
+	if _, err := fmt.Fprintln(w, "| Service | Cost | Share |"); err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintln(w, "| --- | ---: |"); err != nil {
+	if _, err := fmt.Fprintln(w, "| --- | ---: | ---: |"); err != nil {
 		return err
 	}
 	for _, service := range summary.ServiceSpend {
-		if _, err := fmt.Fprintf(w, "| %s | %s |\n", service.Service, formatMoney(service.Cost, summary.Currency)); err != nil {
+		if _, err := fmt.Fprintf(w, "| %s | %s | %s |\n", service.Service, formatMoney(service.Cost, summary.Currency), formatSharePercent(service.SharePercent)); err != nil {
 			return err
 		}
 	}

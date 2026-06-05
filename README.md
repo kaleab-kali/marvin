@@ -5,8 +5,10 @@ AWS account.
 
 It is designed to read exported AWS Cost Explorer CSV files, group spend by
 service and month, and produce plain reports that explain where the bill moved.
-The goal is a pessimistic but accurate local cost monitor: no credentials, no
-cloud access, and no hidden state required for the first release.
+Service rows include each service's share of total spend so large bills are easy
+to scan. The goal is a pessimistic but accurate local cost monitor: no
+credentials, no cloud access, and no hidden state required for the first
+release.
 
 ## Status
 
@@ -248,10 +250,10 @@ Month    Previous  Current  Change   Change %
 2026-02  $143.22   $168.37  +$25.15  +17.56%
 
 Service spend
-Service                                 Cost
-Amazon Elastic Compute Cloud - Compute  $268.13
-Amazon Simple Storage Service           $40.34
-AWS Key Management Service              $3.12
+Service                                 Cost     Share
+Amazon Elastic Compute Cloud - Compute  $268.13  86.05%
+Amazon Simple Storage Service           $40.34   12.95%
+AWS Key Management Service              $3.12    1.00%
 ```
 
 ## Project Principles

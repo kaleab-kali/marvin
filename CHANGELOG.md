@@ -9,6 +9,7 @@ semantic versioning after the first tagged release.
 
 ### Added
 
+- Benchmarks for CSV parsing and report summary writing.
 - Service spend share percentages in terminal, Markdown, JSON, and CSV reports.
 - Fuzz seed coverage for Cost Explorer CSV and cost value parsing.
 - Cost Explorer CSV inspection with `marvin inspect`.

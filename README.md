@@ -278,8 +278,8 @@ For package boundaries and data flow, see
 
 Versioned release builds are produced by GitHub Actions when a tag matching
 `v*.*.*` is pushed. The release workflow builds Linux, macOS, and Windows
-binaries, injects the tag into `marvin version`, and uploads SHA-256 checksums
-with each artifact.
+binaries, injects the tag into `marvin version`, uploads SHA-256 checksums with
+each artifact, and attaches the binaries and checksums to the GitHub Release.
 
 ## License
 

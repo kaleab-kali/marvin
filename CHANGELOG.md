@@ -9,6 +9,7 @@ semantic versioning after the first tagged release.
 
 ### Added
 
+- Fuzz seed coverage for Cost Explorer CSV and cost value parsing.
 - Cost Explorer CSV inspection with `marvin inspect`.
 - Include-service filtering with `marvin analyze --only-service`.
 - `include_services` config setting for reusable service include filters.
@@ -65,3 +66,7 @@ semantic versioning after the first tagged release.
 - Initial Go CLI scaffold.
 - Cross-platform Go CI workflow.
 - Open-source project metadata.
+
+### Fixed
+
+- Reject non-finite cost values such as `NaN` and `Inf` during CSV parsing.

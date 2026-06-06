@@ -9,6 +9,8 @@ semantic versioning after the first tagged release.
 
 ### Added
 
+- Top-level usage documentation for `marvin inspect` and `marvin validate`
+  flags.
 - Documentation and test coverage for the `marvin --version` and `marvin -v`
   aliases.
 - Output file support for `marvin validate --output`.

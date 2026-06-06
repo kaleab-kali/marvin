@@ -23,6 +23,12 @@ func TestRunShowsHelpWithoutArgs(t *testing.T) {
 	if !strings.Contains(stdout.String(), "marvin analyze [flags] <cost-explorer.csv|-> [more.csv ...]") {
 		t.Fatalf("expected usage in stdout, got %q", stdout.String())
 	}
+	if !strings.Contains(stdout.String(), "marvin inspect [flags] <cost-explorer.csv|-> [more.csv ...]") {
+		t.Fatalf("expected inspect usage in stdout, got %q", stdout.String())
+	}
+	if !strings.Contains(stdout.String(), "marvin validate [flags] <cost-explorer.csv|-> [more.csv ...]") {
+		t.Fatalf("expected validate usage in stdout, got %q", stdout.String())
+	}
 	if stderr.Len() != 0 {
 		t.Fatalf("expected empty stderr, got %q", stderr.String())
 	}

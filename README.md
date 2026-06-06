@@ -204,7 +204,7 @@ marvin config validate <marvin.json|->
 marvin inspect <cost-explorer.csv|-> [more.csv ...]
 marvin sample [flags]
 marvin validate [flags] <cost-explorer.csv|-> [more.csv ...]
-marvin version
+marvin version|--version|-v
 marvin help
 ```
 

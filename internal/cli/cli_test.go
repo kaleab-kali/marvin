@@ -29,19 +29,27 @@ func TestRunShowsHelpWithoutArgs(t *testing.T) {
 }
 
 func TestRunShowsVersion(t *testing.T) {
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
+	for _, args := range [][]string{
+		{"version"},
+		{"--version"},
+		{"-v"},
+	} {
+		t.Run(strings.Join(args, " "), func(t *testing.T) {
+			var stdout bytes.Buffer
+			var stderr bytes.Buffer
 
-	code := Run([]string{"version"}, &stdout, &stderr)
+			code := Run(args, &stdout, &stderr)
 
-	if code != ExitOK {
-		t.Fatalf("expected exit code %d, got %d", ExitOK, code)
-	}
-	if got, want := stdout.String(), "marvin "+Version+"\n"; got != want {
-		t.Fatalf("expected %q, got %q", want, got)
-	}
-	if stderr.Len() != 0 {
-		t.Fatalf("expected empty stderr, got %q", stderr.String())
+			if code != ExitOK {
+				t.Fatalf("expected exit code %d, got %d", ExitOK, code)
+			}
+			if got, want := stdout.String(), "marvin "+Version+"\n"; got != want {
+				t.Fatalf("expected %q, got %q", want, got)
+			}
+			if stderr.Len() != 0 {
+				t.Fatalf("expected empty stderr, got %q", stderr.String())
+			}
+		})
 	}
 }
 

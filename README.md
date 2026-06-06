@@ -95,6 +95,7 @@ Inspect a CSV before reporting:
 ```sh
 marvin inspect fixtures/sample-cost-explorer.csv
 marvin inspect --format json fixtures/sample-cost-explorer.csv
+marvin inspect --format json --output inspect.json fixtures/sample-cost-explorer.csv
 ```
 
 Run with warning thresholds:
@@ -230,6 +231,7 @@ Inspect flags:
 
 ```text
 --format <terminal|json>                Output format. Defaults to terminal. Alias: text.
+--output <path>                         Write the inspection to a file instead of stdout.
 ```
 
 Validate flags:

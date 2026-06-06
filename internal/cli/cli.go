@@ -57,8 +57,9 @@ type inspectOptions struct {
 }
 
 type validateOptions struct {
-	format string
-	paths  []string
+	format     string
+	outputPath string
+	paths      []string
 }
 
 func Run(args []string, stdout, stderr io.Writer) int {
@@ -201,6 +202,25 @@ func runValidate(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return ExitUsageError
 	}
 
+	writeValidationResult := func(result validationResult) int {
+		output := stdout
+		if options.outputPath != "" {
+			outputFile, createErr := os.Create(options.outputPath)
+			if createErr != nil {
+				fmt.Fprintf(stderr, "create output file: %v\n", createErr)
+				return ExitRuntimeError
+			}
+			defer outputFile.Close()
+			output = outputFile
+		}
+
+		if err := writeValidation(output, result, options.format); err != nil {
+			fmt.Fprintf(stderr, "write validation result: %v\n", err)
+			return ExitRuntimeError
+		}
+		return ExitOK
+	}
+
 	records, err := readCostRecords(options.paths, stdin)
 	if err != nil {
 		if options.format == "json" {
@@ -209,8 +229,8 @@ func runValidate(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 				InputCount: len(options.paths),
 				Error:      err.Error(),
 			}
-			if writeErr := writeValidation(stdout, result, options.format); writeErr != nil {
-				fmt.Fprintf(stderr, "write validation result: %v\n", writeErr)
+			if code := writeValidationResult(result); code != ExitOK {
+				return code
 			}
 			return ExitRuntimeError
 		}
@@ -223,11 +243,7 @@ func runValidate(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		InputCount:  len(options.paths),
 		RecordCount: len(records),
 	}
-	if err := writeValidation(stdout, result, options.format); err != nil {
-		fmt.Fprintf(stderr, "write validation result: %v\n", err)
-		return ExitRuntimeError
-	}
-	return ExitOK
+	return writeValidationResult(result)
 }
 
 func readCostRecords(paths []string, stdin io.Reader) ([]cost.Record, error) {
@@ -793,6 +809,18 @@ func parseValidateArgs(args []string) (validateOptions, error) {
 			if err := setValidateFormat(&options, strings.TrimPrefix(arg, "--format=")); err != nil {
 				return validateOptions{}, err
 			}
+		case arg == "--output":
+			value, ok := nextArg(args, &i)
+			if !ok {
+				return validateOptions{}, errors.New("--output requires a path")
+			}
+			if err := setValidateOutputPath(&options, value); err != nil {
+				return validateOptions{}, err
+			}
+		case strings.HasPrefix(arg, "--output="):
+			if err := setValidateOutputPath(&options, strings.TrimPrefix(arg, "--output=")); err != nil {
+				return validateOptions{}, err
+			}
 		case arg == "-":
 			if containsString(options.paths, "-") {
 				return validateOptions{}, errors.New("validate accepts standard input only once")
@@ -1190,6 +1218,15 @@ func setValidateFormat(options *validateOptions, value string) error {
 	}
 }
 
+func setValidateOutputPath(options *validateOptions, value string) error {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return errors.New("--output requires a path")
+	}
+	options.outputPath = value
+	return nil
+}
+
 func containsString(values []string, want string) bool {
 	for _, value := range values {
 		if value == want {
@@ -1354,6 +1391,7 @@ func printValidateUsage(w io.Writer) {
 
 Flags:
   --format <terminal|json> Output format. Defaults to terminal. Alias: text.
+  --output <path>          Write the validation result to a file instead of stdout.
 `)
 }
 

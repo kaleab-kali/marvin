@@ -185,6 +185,42 @@ func TestValidateWritesJSON(t *testing.T) {
 	}
 }
 
+func TestValidateWritesJSONToOutputFile(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+`)
+	outputPath := filepath.Join(t.TempDir(), "validation.json")
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"validate", "--format", "json", "--output", outputPath, csvPath}, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("expected empty stdout when output file is used, got %q", stdout.String())
+	}
+	content, err := os.ReadFile(outputPath)
+	if err != nil {
+		t.Fatalf("expected output file to be written: %v", err)
+	}
+	var result struct {
+		Valid       bool `json:"valid"`
+		InputCount  int  `json:"input_count"`
+		RecordCount int  `json:"record_count"`
+	}
+	if err := json.Unmarshal(content, &result); err != nil {
+		t.Fatalf("expected JSON output file, got %q: %v", string(content), err)
+	}
+	if !result.Valid || result.InputCount != 1 || result.RecordCount != 1 {
+		t.Fatalf("expected valid result for one record, got %#v", result)
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("expected empty stderr, got %q", stderr.String())
+	}
+}
+
 func TestValidateAcceptsTerminalFormatAlias(t *testing.T) {
 	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
 2026-01-01,Amazon EC2,100,USD
@@ -263,6 +299,44 @@ func TestValidateWritesJSONForInvalidCostExplorerCSV(t *testing.T) {
 	}
 }
 
+func TestValidateWritesInvalidJSONToOutputFile(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Unblended Cost,Currency
+2026-01-01,100,USD
+`)
+	outputPath := filepath.Join(t.TempDir(), "validation.json")
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"validate", "--format=json", "--output", outputPath, csvPath}, &stdout, &stderr)
+
+	if code != ExitRuntimeError {
+		t.Fatalf("expected exit code %d, got %d", ExitRuntimeError, code)
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("expected empty stdout when output file is used, got %q", stdout.String())
+	}
+	content, err := os.ReadFile(outputPath)
+	if err != nil {
+		t.Fatalf("expected output file to be written: %v", err)
+	}
+	var result struct {
+		Valid bool   `json:"valid"`
+		Error string `json:"error"`
+	}
+	if err := json.Unmarshal(content, &result); err != nil {
+		t.Fatalf("expected JSON output file, got %q: %v", string(content), err)
+	}
+	if result.Valid {
+		t.Fatalf("expected invalid result, got %#v", result)
+	}
+	if !strings.Contains(result.Error, "missing required column(s): service") {
+		t.Fatalf("expected validation error, got %q", result.Error)
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("expected empty stderr, got %q", stderr.String())
+	}
+}
+
 func TestValidateRejectsUnsupportedFormat(t *testing.T) {
 	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
 2026-01-01,Amazon EC2,100,USD
@@ -280,6 +354,23 @@ func TestValidateRejectsUnsupportedFormat(t *testing.T) {
 	}
 	if !strings.Contains(stderr.String(), `unsupported --format "csv", expected terminal, text, or json`) {
 		t.Fatalf("expected unsupported format error, got %q", stderr.String())
+	}
+}
+
+func TestValidateRejectsEmptyOutputPath(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"validate", "--output=", "cost.csv"}, &stdout, &stderr)
+
+	if code != ExitUsageError {
+		t.Fatalf("expected exit code %d, got %d", ExitUsageError, code)
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("expected empty stdout, got %q", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), "--output requires a path") {
+		t.Fatalf("expected output path error, got %q", stderr.String())
 	}
 }
 

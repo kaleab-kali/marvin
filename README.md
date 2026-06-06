@@ -88,6 +88,7 @@ Validate a CSV before reporting:
 ```sh
 marvin validate fixtures/sample-cost-explorer.csv
 marvin validate --format json fixtures/sample-cost-explorer.csv
+marvin validate --format json --output validation.json fixtures/sample-cost-explorer.csv
 ```
 
 Inspect a CSV before reporting:
@@ -238,6 +239,7 @@ Validate flags:
 
 ```text
 --format <terminal|json>                Output format. Defaults to terminal. Alias: text.
+--output <path>                         Write the validation result to a file instead of stdout.
 ```
 
 Sample flags:

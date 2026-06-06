@@ -104,6 +104,7 @@ failure result:
 
 ```sh
 marvin validate --format json cost-explorer.csv
+marvin validate --format json --output validation.json cost-explorer.csv
 ```
 
 Success fields:

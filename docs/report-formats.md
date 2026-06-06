@@ -6,6 +6,9 @@ analysis summary.
 Use terminal or Markdown for human review. Use JSON or CSV when another tool
 needs to consume the report.
 
+The `inspect` command also supports terminal and JSON output for checking parsed
+CSV contents before running analysis.
+
 ## Terminal
 
 Terminal output is the default:
@@ -93,3 +96,21 @@ Columns:
 - `previous`: previous month value for growth warning rows.
 
 Empty cells mean the column is not applicable to that row type.
+
+## Inspect JSON
+
+Use JSON inspection when scripts need to check which months, currencies, and
+services are present before choosing analysis filters:
+
+```sh
+marvin inspect --format json cost-explorer.csv
+```
+
+Fields:
+
+- `input_count`: number of input streams or files read.
+- `record_count`: number of parsed cost records.
+- `first_month`: first parsed billing month.
+- `last_month`: last parsed billing month.
+- `currency_spend`: sorted currency totals.
+- `services`: sorted service names parsed from the export.

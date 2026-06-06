@@ -258,6 +258,91 @@ func TestInspectAcceptsCostExplorerCSVFromStdin(t *testing.T) {
 	}
 }
 
+func TestInspectWritesJSON(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
+2026-02-01,Amazon S3,25,GBP
+2026-02-01,Amazon EC2,100,USD
+2026-01-01,Amazon EC2,50,USD
+`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"inspect", "--format=json", csvPath}, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
+	}
+	var payload struct {
+		InputCount    int    `json:"input_count"`
+		RecordCount   int    `json:"record_count"`
+		FirstMonth    string `json:"first_month"`
+		LastMonth     string `json:"last_month"`
+		CurrencySpend []struct {
+			Currency string  `json:"currency"`
+			Cost     float64 `json:"cost"`
+		} `json:"currency_spend"`
+		Services []string `json:"services"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &payload); err != nil {
+		t.Fatalf("expected valid JSON, got %v with output %q", err, stdout.String())
+	}
+	if payload.InputCount != 1 || payload.RecordCount != 3 {
+		t.Fatalf("expected input count 1 and record count 3, got %+v", payload)
+	}
+	if payload.FirstMonth != "2026-01" || payload.LastMonth != "2026-02" {
+		t.Fatalf("expected month range 2026-01 to 2026-02, got %+v", payload)
+	}
+	if len(payload.CurrencySpend) != 2 {
+		t.Fatalf("expected two currency totals, got %+v", payload.CurrencySpend)
+	}
+	if payload.CurrencySpend[0].Currency != "GBP" || payload.CurrencySpend[0].Cost != 25 {
+		t.Fatalf("expected GBP total first, got %+v", payload.CurrencySpend)
+	}
+	if payload.CurrencySpend[1].Currency != "USD" || payload.CurrencySpend[1].Cost != 150 {
+		t.Fatalf("expected USD total second, got %+v", payload.CurrencySpend)
+	}
+	if len(payload.Services) != 2 || payload.Services[0] != "Amazon EC2" || payload.Services[1] != "Amazon S3" {
+		t.Fatalf("expected sorted services, got %+v", payload.Services)
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("expected empty stderr, got %q", stderr.String())
+	}
+}
+
+func TestInspectAcceptsTerminalFormatAlias(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"inspect", "--format=text", csvPath}, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "Marvin Cost Export Inspection") {
+		t.Fatalf("expected terminal inspection output, got:\n%s", stdout.String())
+	}
+}
+
+func TestInspectRejectsUnsupportedFormat(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"inspect", "--format=csv", "cost.csv"}, &stdout, &stderr)
+
+	if code != ExitUsageError {
+		t.Fatalf("expected exit code %d, got %d", ExitUsageError, code)
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("expected empty stdout, got %q", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), `unsupported --format "csv"`) {
+		t.Fatalf("expected unsupported format error, got %q", stderr.String())
+	}
+}
+
 func TestInspectRejectsMissingPath(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer

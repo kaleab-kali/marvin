@@ -44,8 +44,9 @@ affect rows shown in the service section.
 
 The `validate` and `inspect` commands share the same CSV reader as `analyze` so
 they catch parser issues before users run reports. `validate` only confirms that
-inputs can be parsed. `inspect` prints record count, month range, spend by
-currency, and the parsed service list without applying report filters.
+inputs can be parsed. `inspect` summarizes record count, month range, spend by
+currency, and the parsed service list without applying report filters. Terminal
+inspection is optimized for people; JSON inspection is intended for automation.
 
 ## Config Loading
 

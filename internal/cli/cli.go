@@ -1312,7 +1312,7 @@ Usage:
   marvin inspect <cost-explorer.csv|-> [more.csv ...]
   marvin sample [flags]
   marvin validate <cost-explorer.csv|-> [more.csv ...]
-  marvin version
+  marvin version|--version|-v
   marvin help
 
 Status:

@@ -9,6 +9,8 @@ semantic versioning after the first tagged release.
 
 ### Added
 
+- Documentation and test coverage for the `marvin --version` and `marvin -v`
+  aliases.
 - Output file support for `marvin validate --output`.
 - Output file support for `marvin inspect --output`.
 - JSON output for `marvin validate --format json`.

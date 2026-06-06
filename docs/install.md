@@ -55,6 +55,8 @@ chmod +x marvin-linux-amd64
 mkdir -p ~/.local/bin
 mv marvin-linux-amd64 ~/.local/bin/marvin
 marvin version
+marvin --version
+marvin -v
 ```
 
 Windows PowerShell example:
@@ -63,6 +65,8 @@ Windows PowerShell example:
 New-Item -ItemType Directory -Force "$HOME\bin"
 Move-Item .\marvin-windows-amd64.exe "$HOME\bin\marvin.exe"
 marvin version
+marvin --version
+marvin -v
 ```
 
 Make sure the target directory is listed in your `PATH`.

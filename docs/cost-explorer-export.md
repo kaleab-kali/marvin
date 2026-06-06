@@ -67,6 +67,7 @@ Run:
 
 ```sh
 marvin validate path/to/cost-explorer.csv
+marvin validate --format json path/to/cost-explorer.csv
 ```
 
 Inspect parsed months, currencies, services, and currency totals before choosing

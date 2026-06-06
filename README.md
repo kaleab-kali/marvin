@@ -87,6 +87,7 @@ Validate a CSV before reporting:
 
 ```sh
 marvin validate fixtures/sample-cost-explorer.csv
+marvin validate --format json fixtures/sample-cost-explorer.csv
 ```
 
 Inspect a CSV before reporting:
@@ -200,7 +201,7 @@ marvin config sample [flags]
 marvin config validate <marvin.json|->
 marvin inspect <cost-explorer.csv|-> [more.csv ...]
 marvin sample [flags]
-marvin validate <cost-explorer.csv|-> [more.csv ...]
+marvin validate [flags] <cost-explorer.csv|-> [more.csv ...]
 marvin version
 marvin help
 ```
@@ -226,6 +227,12 @@ Analyze flags:
 ```
 
 Inspect flags:
+
+```text
+--format <terminal|json>                Output format. Defaults to terminal. Alias: text.
+```
+
+Validate flags:
 
 ```text
 --format <terminal|json>                Output format. Defaults to terminal. Alias: text.

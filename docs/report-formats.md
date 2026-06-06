@@ -6,8 +6,8 @@ analysis summary.
 Use terminal or Markdown for human review. Use JSON or CSV when another tool
 needs to consume the report.
 
-The `inspect` command also supports terminal and JSON output for checking parsed
-CSV contents before running analysis.
+The `validate` and `inspect` commands also support terminal and JSON output for
+checking parsed CSV contents before running analysis.
 
 ## Terminal
 
@@ -96,6 +96,24 @@ Columns:
 - `previous`: previous month value for growth warning rows.
 
 Empty cells mean the column is not applicable to that row type.
+
+## Validate JSON
+
+Use JSON validation when CI jobs or scripts need a machine-readable success or
+failure result:
+
+```sh
+marvin validate --format json cost-explorer.csv
+```
+
+Success fields:
+
+- `valid`: `true` when all inputs parse successfully.
+- `input_count`: number of input streams or files read.
+- `record_count`: number of parsed cost records.
+
+When CSV parsing or file reading fails, Marvin exits with code `1` and writes a
+JSON object with `valid: false`, `input_count`, and `error`.
 
 ## Inspect JSON
 

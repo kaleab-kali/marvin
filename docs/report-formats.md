@@ -122,6 +122,7 @@ services are present before choosing analysis filters:
 
 ```sh
 marvin inspect --format json cost-explorer.csv
+marvin inspect --format json --output inspect.json cost-explorer.csv
 ```
 
 Fields:

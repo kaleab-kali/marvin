@@ -76,6 +76,7 @@ analysis filters:
 ```sh
 marvin inspect path/to/cost-explorer.csv
 marvin inspect --format json path/to/cost-explorer.csv
+marvin inspect --format json --output inspect.json path/to/cost-explorer.csv
 ```
 
 Then create a report:

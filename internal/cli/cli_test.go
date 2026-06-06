@@ -426,6 +426,41 @@ func TestInspectWritesJSON(t *testing.T) {
 	}
 }
 
+func TestInspectWritesJSONToOutputFile(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+`)
+	outputPath := filepath.Join(t.TempDir(), "inspect.json")
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"inspect", "--format", "json", "--output", outputPath, csvPath}, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("expected empty stdout when output file is used, got %q", stdout.String())
+	}
+	content, err := os.ReadFile(outputPath)
+	if err != nil {
+		t.Fatalf("expected output file to be written: %v", err)
+	}
+	var payload struct {
+		InputCount  int `json:"input_count"`
+		RecordCount int `json:"record_count"`
+	}
+	if err := json.Unmarshal(content, &payload); err != nil {
+		t.Fatalf("expected valid JSON file, got %v with content %q", err, string(content))
+	}
+	if payload.InputCount != 1 || payload.RecordCount != 1 {
+		t.Fatalf("expected input count 1 and record count 1, got %+v", payload)
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("expected empty stderr, got %q", stderr.String())
+	}
+}
+
 func TestInspectAcceptsTerminalFormatAlias(t *testing.T) {
 	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
 2026-01-01,Amazon EC2,100,USD
@@ -457,6 +492,23 @@ func TestInspectRejectsUnsupportedFormat(t *testing.T) {
 	}
 	if !strings.Contains(stderr.String(), `unsupported --format "csv"`) {
 		t.Fatalf("expected unsupported format error, got %q", stderr.String())
+	}
+}
+
+func TestInspectRejectsEmptyOutputPath(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"inspect", "--output=", "cost.csv"}, &stdout, &stderr)
+
+	if code != ExitUsageError {
+		t.Fatalf("expected exit code %d, got %d", ExitUsageError, code)
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("expected empty stdout, got %q", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), "--output requires a path") {
+		t.Fatalf("expected output path error, got %q", stderr.String())
 	}
 }
 

@@ -51,8 +51,9 @@ type analyzeOptions struct {
 }
 
 type inspectOptions struct {
-	format string
-	paths  []string
+	format     string
+	outputPath string
+	paths      []string
 }
 
 type validateOptions struct {
@@ -169,7 +170,19 @@ func runInspect(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	}
 
 	summary := buildInspection(records, len(options.paths))
-	if err := writeInspection(stdout, summary, options.format); err != nil {
+	output := stdout
+	var outputFile *os.File
+	if options.outputPath != "" {
+		outputFile, err = os.Create(options.outputPath)
+		if err != nil {
+			fmt.Fprintf(stderr, "create output file: %v\n", err)
+			return ExitRuntimeError
+		}
+		defer outputFile.Close()
+		output = outputFile
+	}
+
+	if err := writeInspection(output, summary, options.format); err != nil {
 		fmt.Fprintf(stderr, "write inspection: %v\n", err)
 		return ExitRuntimeError
 	}
@@ -639,6 +652,18 @@ func parseInspectArgs(args []string) (inspectOptions, error) {
 			}
 		case strings.HasPrefix(arg, "--format="):
 			if err := setInspectFormat(&options, strings.TrimPrefix(arg, "--format=")); err != nil {
+				return inspectOptions{}, err
+			}
+		case arg == "--output":
+			value, ok := nextArg(args, &i)
+			if !ok {
+				return inspectOptions{}, errors.New("--output requires a path")
+			}
+			if err := setInspectOutputPath(&options, value); err != nil {
+				return inspectOptions{}, err
+			}
+		case strings.HasPrefix(arg, "--output="):
+			if err := setInspectOutputPath(&options, strings.TrimPrefix(arg, "--output=")); err != nil {
 				return inspectOptions{}, err
 			}
 		case arg == "-":
@@ -1142,6 +1167,15 @@ func setInspectFormat(options *inspectOptions, value string) error {
 	}
 }
 
+func setInspectOutputPath(options *inspectOptions, value string) error {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return errors.New("--output requires a path")
+	}
+	options.outputPath = value
+	return nil
+}
+
 func setValidateFormat(options *validateOptions, value string) error {
 	value = strings.ToLower(strings.TrimSpace(value))
 	switch value {
@@ -1301,6 +1335,7 @@ func printInspectUsage(w io.Writer) {
 
 Flags:
   --format <terminal|json> Output format. Defaults to terminal. Alias: text.
+  --output <path>          Write the inspection to a file instead of stdout.
 `)
 }
 

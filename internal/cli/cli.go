@@ -1309,9 +1309,9 @@ Usage:
   marvin analyze [flags] <cost-explorer.csv|-> [more.csv ...]
   marvin config sample [flags]
   marvin config validate <marvin.json|->
-  marvin inspect <cost-explorer.csv|-> [more.csv ...]
+  marvin inspect [flags] <cost-explorer.csv|-> [more.csv ...]
   marvin sample [flags]
-  marvin validate <cost-explorer.csv|-> [more.csv ...]
+  marvin validate [flags] <cost-explorer.csv|-> [more.csv ...]
   marvin version|--version|-v
   marvin help
 

@@ -9,6 +9,7 @@ semantic versioning after the first tagged release.
 
 ### Added
 
+- JSON output for `marvin validate --format json`.
 - JSON output for `marvin inspect --format json`.
 - Dependabot update monitoring for GitHub Actions and Go modules.
 - CodeQL security analysis workflow.

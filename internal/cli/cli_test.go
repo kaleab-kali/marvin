@@ -146,6 +146,65 @@ func TestValidateAcceptsCostExplorerCSVFromStdin(t *testing.T) {
 	}
 }
 
+func TestValidateWritesJSON(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+2026-01-01,Amazon S3,25,USD
+`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"validate", "--format", "json", csvPath}, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
+	}
+	var result struct {
+		Valid       bool   `json:"valid"`
+		InputCount  int    `json:"input_count"`
+		RecordCount int    `json:"record_count"`
+		Error       string `json:"error"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &result); err != nil {
+		t.Fatalf("expected JSON output, got %q: %v", stdout.String(), err)
+	}
+	if !result.Valid {
+		t.Fatalf("expected valid result, got %#v", result)
+	}
+	if result.InputCount != 1 {
+		t.Fatalf("expected input count 1, got %d", result.InputCount)
+	}
+	if result.RecordCount != 2 {
+		t.Fatalf("expected record count 2, got %d", result.RecordCount)
+	}
+	if result.Error != "" {
+		t.Fatalf("expected empty error, got %q", result.Error)
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("expected empty stderr, got %q", stderr.String())
+	}
+}
+
+func TestValidateAcceptsTerminalFormatAlias(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"validate", "--format", "text", csvPath}, &stdout, &stderr)
+
+	if code != ExitOK {
+		t.Fatalf("expected exit code %d, got %d with stderr %q", ExitOK, code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "validated 1 cost records from 1 input(s)") {
+		t.Fatalf("expected validation success message, got %q", stdout.String())
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("expected empty stderr, got %q", stderr.String())
+	}
+}
+
 func TestValidateRejectsInvalidCostExplorerCSV(t *testing.T) {
 	csvPath := writeTempCSV(t, `Start Date,Unblended Cost,Currency
 2026-01-01,100,USD
@@ -163,6 +222,64 @@ func TestValidateRejectsInvalidCostExplorerCSV(t *testing.T) {
 	}
 	if !strings.Contains(stderr.String(), "missing required column(s): service") {
 		t.Fatalf("expected missing service column error, got %q", stderr.String())
+	}
+}
+
+func TestValidateWritesJSONForInvalidCostExplorerCSV(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Unblended Cost,Currency
+2026-01-01,100,USD
+`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"validate", "--format=json", csvPath}, &stdout, &stderr)
+
+	if code != ExitRuntimeError {
+		t.Fatalf("expected exit code %d, got %d", ExitRuntimeError, code)
+	}
+	var result struct {
+		Valid       bool   `json:"valid"`
+		InputCount  int    `json:"input_count"`
+		RecordCount int    `json:"record_count"`
+		Error       string `json:"error"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &result); err != nil {
+		t.Fatalf("expected JSON output, got %q: %v", stdout.String(), err)
+	}
+	if result.Valid {
+		t.Fatalf("expected invalid result, got %#v", result)
+	}
+	if result.InputCount != 1 {
+		t.Fatalf("expected input count 1, got %d", result.InputCount)
+	}
+	if result.RecordCount != 0 {
+		t.Fatalf("expected record count 0, got %d", result.RecordCount)
+	}
+	if !strings.Contains(result.Error, "missing required column(s): service") {
+		t.Fatalf("expected validation error, got %q", result.Error)
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("expected empty stderr, got %q", stderr.String())
+	}
+}
+
+func TestValidateRejectsUnsupportedFormat(t *testing.T) {
+	csvPath := writeTempCSV(t, `Start Date,Service,Unblended Cost,Currency
+2026-01-01,Amazon EC2,100,USD
+`)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	code := Run([]string{"validate", "--format", "csv", csvPath}, &stdout, &stderr)
+
+	if code != ExitUsageError {
+		t.Fatalf("expected exit code %d, got %d", ExitUsageError, code)
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("expected empty stdout, got %q", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), `unsupported --format "csv", expected terminal, text, or json`) {
+		t.Fatalf("expected unsupported format error, got %q", stderr.String())
 	}
 }
 

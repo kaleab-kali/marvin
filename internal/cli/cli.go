@@ -55,6 +55,11 @@ type inspectOptions struct {
 	paths  []string
 }
 
+type validateOptions struct {
+	format string
+	paths  []string
+}
+
 func Run(args []string, stdout, stderr io.Writer) int {
 	return RunWithIO(args, os.Stdin, stdout, stderr)
 }
@@ -173,7 +178,7 @@ func runInspect(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 }
 
 func runValidate(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
-	paths, err := parseValidateArgs(args)
+	options, err := parseValidateArgs(args)
 	if errors.Is(err, errValidateHelp) {
 		printValidateUsage(stdout)
 		return ExitOK
@@ -183,13 +188,32 @@ func runValidate(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return ExitUsageError
 	}
 
-	records, err := readCostRecords(paths, stdin)
+	records, err := readCostRecords(options.paths, stdin)
 	if err != nil {
+		if options.format == "json" {
+			result := validationResult{
+				Valid:      false,
+				InputCount: len(options.paths),
+				Error:      err.Error(),
+			}
+			if writeErr := writeValidation(stdout, result, options.format); writeErr != nil {
+				fmt.Fprintf(stderr, "write validation result: %v\n", writeErr)
+			}
+			return ExitRuntimeError
+		}
 		fmt.Fprintf(stderr, "%v\n", err)
 		return ExitRuntimeError
 	}
 
-	fmt.Fprintf(stdout, "validated %d cost records from %d input(s)\n", len(records), len(paths))
+	result := validationResult{
+		Valid:       true,
+		InputCount:  len(options.paths),
+		RecordCount: len(records),
+	}
+	if err := writeValidation(stdout, result, options.format); err != nil {
+		fmt.Fprintf(stderr, "write validation result: %v\n", err)
+		return ExitRuntimeError
+	}
 	return ExitOK
 }
 
@@ -725,28 +749,40 @@ func parseSampleArgs(args []string) (string, error) {
 	return outputPath, nil
 }
 
-func parseValidateArgs(args []string) ([]string, error) {
-	var paths []string
+func parseValidateArgs(args []string) (validateOptions, error) {
+	options := validateOptions{format: "terminal"}
 	for i := 0; i < len(args); i++ {
 		arg := args[i]
 		switch {
 		case arg == "-h" || arg == "--help":
-			return nil, errValidateHelp
-		case arg == "-":
-			if containsString(paths, "-") {
-				return nil, errors.New("validate accepts standard input only once")
+			return validateOptions{}, errValidateHelp
+		case arg == "--format":
+			value, ok := nextArg(args, &i)
+			if !ok {
+				return validateOptions{}, errors.New("--format requires terminal or json")
 			}
-			paths = append(paths, arg)
+			if err := setValidateFormat(&options, value); err != nil {
+				return validateOptions{}, err
+			}
+		case strings.HasPrefix(arg, "--format="):
+			if err := setValidateFormat(&options, strings.TrimPrefix(arg, "--format=")); err != nil {
+				return validateOptions{}, err
+			}
+		case arg == "-":
+			if containsString(options.paths, "-") {
+				return validateOptions{}, errors.New("validate accepts standard input only once")
+			}
+			options.paths = append(options.paths, arg)
 		case strings.HasPrefix(arg, "-"):
-			return nil, fmt.Errorf("unknown validate flag %q", arg)
+			return validateOptions{}, fmt.Errorf("unknown validate flag %q", arg)
 		default:
-			paths = append(paths, arg)
+			options.paths = append(options.paths, arg)
 		}
 	}
-	if len(paths) == 0 {
-		return nil, errors.New("validate requires a Cost Explorer CSV path")
+	if len(options.paths) == 0 {
+		return validateOptions{}, errors.New("validate requires a Cost Explorer CSV path")
 	}
-	return paths, nil
+	return options, nil
 }
 
 func writeReport(stdout io.Writer, summary report.Summary, options analyzeOptions) error {
@@ -776,6 +812,13 @@ type inspectionSummary struct {
 	LastMonth     string          `json:"last_month"`
 	CurrencySpend []currencySpend `json:"currency_spend"`
 	Services      []string        `json:"services"`
+}
+
+type validationResult struct {
+	Valid       bool   `json:"valid"`
+	InputCount  int    `json:"input_count"`
+	RecordCount int    `json:"record_count"`
+	Error       string `json:"error,omitempty"`
 }
 
 func buildInspection(records []cost.Record, inputCount int) inspectionSummary {
@@ -868,6 +911,28 @@ func writeJSONInspection(stdout io.Writer, summary inspectionSummary) error {
 	encoder := json.NewEncoder(stdout)
 	encoder.SetIndent("", "  ")
 	return encoder.Encode(summary)
+}
+
+func writeValidation(stdout io.Writer, result validationResult, format string) error {
+	switch format {
+	case "terminal":
+		return writeTerminalValidation(stdout, result)
+	case "json":
+		return writeJSONValidation(stdout, result)
+	default:
+		return fmt.Errorf("unsupported validation format %q", format)
+	}
+}
+
+func writeTerminalValidation(stdout io.Writer, result validationResult) error {
+	_, err := fmt.Fprintf(stdout, "validated %d cost records from %d input(s)\n", result.RecordCount, result.InputCount)
+	return err
+}
+
+func writeJSONValidation(stdout io.Writer, result validationResult) error {
+	encoder := json.NewEncoder(stdout)
+	encoder.SetIndent("", "  ")
+	return encoder.Encode(result)
 }
 
 func roundMoney(value float64) float64 {
@@ -1077,6 +1142,20 @@ func setInspectFormat(options *inspectOptions, value string) error {
 	}
 }
 
+func setValidateFormat(options *validateOptions, value string) error {
+	value = strings.ToLower(strings.TrimSpace(value))
+	switch value {
+	case "terminal", "text":
+		options.format = "terminal"
+		return nil
+	case "json":
+		options.format = "json"
+		return nil
+	default:
+		return fmt.Errorf("unsupported --format %q, expected terminal, text, or json", value)
+	}
+}
+
 func containsString(values []string, want string) bool {
 	for _, value := range values {
 		if value == want {
@@ -1236,7 +1315,10 @@ Flags:
 
 func printValidateUsage(w io.Writer) {
 	fmt.Fprint(w, `Usage:
-  marvin validate <cost-explorer.csv|-> [more.csv ...]
+  marvin validate [flags] <cost-explorer.csv|-> [more.csv ...]
+
+Flags:
+  --format <terminal|json> Output format. Defaults to terminal. Alias: text.
 `)
 }
 
